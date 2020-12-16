@@ -128,7 +128,7 @@ def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
     nd = dvalues.shape[0]
     indvar = np.zeros((nd, nf))
     for i in range(nd):
-        indvar[i, dvalues[i]] = 1
+        indvar[i, dvalues[i].astype(int)] = 1
 
     # kriging weights
     xdtemp = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(np.vstack((xcoord, dcoords))))
@@ -283,12 +283,12 @@ def SpatialCovariance1D(h, l, krigtype):
     # covariance function
     if krigtype == 'exp':
         C = ExpCov(h, l)
-    #elif krigtype == 'gau':
-    #    C = GauGov(h, l)
-    #elif krigtype == 'sph':
-    #    C = SphCov(h, l)
-    #else:
-    #    print('error')    
+    elif krigtype == 'gau':
+        C = GauCov(h, l)
+    elif krigtype == 'sph':
+        C = SphCov(h, l)  
+    else:
+        print('error')   
         
     return C
     
@@ -309,12 +309,12 @@ def SpatialCovariance2D(lmin, lmax, azim, theta, h, krigtype):
     # covariance function
     if krigtype == 'exp':
         C = ExpCov(h, RadialCorrLength(lmin, lmax, azim, theta))
-    #elif krigtype == 'gau':
-    #    C = GauGov(h, RadialCorrLength(lmin, lmax, azim, theta))
-    #elif krigtype == 'sph':
-    #    C = SphCov(h, RadialCorrLength(lmin, lmax, azim, theta))
-    #else:
-    #    print('error')    
+    elif krigtype == 'gau':
+        C = GauCov(h, RadialCorrLength(lmin, lmax, azim, theta))
+    elif krigtype == 'sph':
+        C = SphCov(h, RadialCorrLength(lmin, lmax, azim, theta))
+    else:
+        print('error')    
         
     return C    
 
