@@ -376,7 +376,7 @@ def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, k
             krigmean, krigvar = OrdinaryKriging(pathcoords[i,:], dc, dz, xvar, l, krigtype)
   
         # realization
-        simval[pathind[i],0] = krigmean + np.sqrt(krigvar) * np.random.random(1)
+        simval[pathind[i],0] = krigmean + np.sqrt(krigvar) * np.random.randn(1)
         # Adding simulated value the vector of conditioning data
         dcoords = np.vstack((dcoords, pathcoords[i, :]))
         dvalues = np.vstack((dvalues, simval[pathind[i]]))
