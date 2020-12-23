@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Tue Nov 17 20:05:53 2020
@@ -9,7 +8,7 @@ Created on Tue Nov 17 20:05:53 2020
 import numpy as np
 import numpy.matlib
 from numpy.linalg import matrix_power
-import scipy 
+import scipy .spatial
 
 
 def CorrelatedSimulation(mprior, sigma0, sigmaspace):
@@ -77,7 +76,8 @@ def SphCov(h, l):
 
     # covariance function
     C = np.zeros(h.shape)
-    C(h <= l).lvalue = 1 - 3 / 2 * h(h <= l) / l + 1 / 2 * h(h <= l) ** 3 / l ** 3
+    #C(h <= l).lvalue = 1 - 3 / 2 * h(h <= l) / l + 1 / 2 * h(h <= l) ** 3 / l ** 3
+    C[h <= l] = 1 - 3 / 2 * h[h <= l] / l + 1 / 2 * h[h <= l] ** 3 / l ** 3
 
     return C
 
@@ -117,12 +117,18 @@ def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
     #       nf = number of possible outcomes (e.g. number of facies)
     #       pprior = prior probability (1,nf)
     #       h = distance 
-    #       l = correlation length
-    #       type = function ype ('exp', 'gau', 'sph')
+    #       l = correlation range, for different range for each facies, l is an array with nf components
+    #       type = function type ('exp', 'gau', 'sph') for different types for each facies, type is an array wuth nf components
     # OUTPUT ikp = indicator kriging probability
     #        ikmap = maximum a posteriori of indicator kriging probability
 
     # Written by Dario Grana (August, 2020)
+    
+    # If l and krigtype are single parameters, use it for all facies
+    if type(l)==float:
+        l = np.tile(l, (nf, 1))
+    if type(krigtype)==str:
+        krigtype = np.tile(krigtype, (nf, 1))
 
     # indicator variables
     nd = dvalues.shape[0]
@@ -141,8 +147,8 @@ def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
     wkrig = np.zeros((nd, nf))
     for j in range(nf):
         varprior[:,j]= pprior[j] * (1 - pprior[j])
-        krigvect[:,j]= varprior[:,j] * SpatialCovariance1D(distvect, l, krigtype)
-        krigmatr[:,:,j] = varprior[:,j] * SpatialCovariance1D(distmatr, l, krigtype)
+        krigvect[:,j]= varprior[:,j] * SpatialCovariance1D(distvect, l[j], krigtype[j])
+        krigmatr[:,:,j] = varprior[:,j] * SpatialCovariance1D(distmatr, l[j], krigtype[j])
         wkrig[:,j] = np.linalg.lstsq(krigmatr[:,:,j], krigvect[:,j])[0]
         
 
@@ -150,7 +156,10 @@ def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
     ikp = np.zeros((1, nf))
     for j in range(nf):
         ikp[0,j] = pprior[j] + sum(wkrig[:,j] * (indvar[:,j]- pprior[j]))
-        
+
+    # Should we only normalize ikp, do we have to truncate?        
+    #ikp[ikp<0] = 0;ikp[ikp>1] = 1
+    ikp = ikp/ikp.sum()
     ikmap = np.argmax(ikp, axis=1)
     
     return ikp, ikmap
@@ -180,6 +189,8 @@ def OrdinaryKriging(xcoord, dcoords, dvalues, xvar, l, krigtype):
     krigvect[0:-1,0] = xvar * SpatialCovariance1D(distvect, l, krigtype)
     krigmatr[0:-1,0:-1] = xvar * SpatialCovariance1D(distmatr, l, krigtype)
     krigmatr[-1,-1] = 0
+    # to avoid numerical issue, specially with Gaussian variogram model
+    #krigmatr = krigmatr + 0.000001*xvar*np.eye(krigmatr.shape[0])
 
     # kriging weights
     wkrig = np.linalg.lstsq(krigmatr, krigvect)[0]
@@ -217,6 +228,8 @@ def SimpleKriging(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype):
     distmatr = xdtemp[1:,1:]
     krigvect[:,0] = xvar * SpatialCovariance1D(distvect, l, krigtype)
     krigmatr = xvar * SpatialCovariance1D(distmatr, l, krigtype)
+    # to avoid numerical issue, specially with Gaussian variogram model
+    krigmatr = krigmatr + 0.000001*xvar*np.eye(krigmatr.shape[0])
 
     # kriging weights
     wkrig = np.linalg.lstsq(krigmatr, krigvect)[0]
@@ -440,7 +453,7 @@ def SeqIndicatorSimulation(xcoords, dcoords, dvalues, nf, pprior, l, krigtype):
             
         ikprob, ikmap = IndicatorKriging(pathcoords[i,:], dc, dz, nf, pprior, l, krigtype)
 
-        # realization
+        # realization        
         simval[pathind[i]] = RandDisc(ikprob)
         # Adding simulated value the vector of conditioning data
         dcoords = np.vstack((dcoords, pathcoords[i, :]))
