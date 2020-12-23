@@ -118,7 +118,7 @@ def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
     #       pprior = prior probability (1,nf)
     #       h = distance 
     #       l = correlation range, for different range for each facies, l is an array with nf components
-    #       type = function type ('exp', 'gau', 'sph') for different types for each facies, type is an array wuth nf components
+    #       type = function type ('exp', 'gau', 'sph') for different type for each facies, type is an array wuth nf components
     # OUTPUT ikp = indicator kriging probability
     #        ikmap = maximum a posteriori of indicator kriging probability
 
@@ -410,8 +410,8 @@ def SeqIndicatorSimulation(xcoords, dcoords, dvalues, nf, pprior, l, krigtype):
     #       nf = number of possible outcomes (e.g. number of facies)
     #       pprior = prior probability (1,nf)
     #       h = distance
-    #       l = correlation length
-    #       type = function ype ('exp', 'gau', 'sph')
+    #       l = correlation range, for different range for each facies, l is an array with nf components
+    #       type = function type ('exp', 'gau', 'sph') for different type for each facies, type is an array wuth nf components
     # OUTPUT sgsim = realization
 
     # Written by Dario Grana (August, 2020)
