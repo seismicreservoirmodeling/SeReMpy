@@ -190,7 +190,7 @@ def OrdinaryKriging(xcoord, dcoords, dvalues, xvar, l, krigtype):
     krigmatr[0:-1,0:-1] = xvar * SpatialCovariance1D(distmatr, l, krigtype)
     krigmatr[-1,-1] = 0
     # to avoid numerical issue, specially with Gaussian variogram model
-    #krigmatr = krigmatr + 0.000001*xvar*np.eye(krigmatr.shape[0])
+    krigmatr = krigmatr + 0.000001*xvar*np.eye(krigmatr.shape[0])
 
     # kriging weights
     wkrig = np.linalg.lstsq(krigmatr, krigvect)[0]
