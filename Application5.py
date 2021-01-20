@@ -63,7 +63,7 @@ Rhoo = 0.7
 
 #% Prior model (filtered well logs)
 nfilt = 3
-cutofffr = 0.04
+cutofffr = 0.02
 b, a = signal.butter(nfilt, cutofffr)
 Phiprior = signal.filtfilt(b, a, np.squeeze(Phi))
 Swprior = signal.filtfilt(b, a, np.squeeze(Sw))
@@ -77,8 +77,8 @@ corrlength = 5 * dt
 trow = np.matlib.repmat(np.arange(0, nm * dt, dt), nm, 1)
 tcol = np.matlib.repmat(trow[0,:].reshape(nm,1), 1, nm)
 tdis = abs(trow - tcol)
-sigmatime = np.exp(-(tdis / corrlength) ** 2)
-sigma0 = np.cov(np.hstack([Phi, Sw]).T)
+sigmatime = np.exp(-(tdis / (corrlength/3)) ** 2)
+sigma0 = np.cov(np.hstack([Phi-Phiprior[:,np.newaxis], Sw-Swprior[:,np.newaxis]]).T)
 sigmaprior = np.kron(sigma0, sigmatime)
 InvCovmatrixPrior = np.linalg.pinv(sigmaprior)
 
@@ -90,15 +90,15 @@ Errvar = np.diag(np.array([Errnear, Errmid, Errfar]))
 InvCovErr = np.linalg.pinv(np.kron(Errvar, np.eye(nd)))
 
 # proposal variance
-varfrac = 0.001# variance fraction in the proposal
+varfrac = 0.01# variance fraction in the proposal
 
 # Initial model 
 mtrend = np.hstack([Phiprior[:,np.newaxis], Swprior[:,np.newaxis]])
 msim = CorrelatedSimulation(mtrend, varfrac*sigma0, sigmatime)
 Phiinit = msim[:,0]
 Swinit = msim[:,1]
-Phiinit[Phiinit < 0] = 0
-Phiinit[Phiinit > 0.4] = 0.4
+Phiinit[Phiinit < 0.01] = 0.01
+Phiinit[Phiinit > 0.36] = 0.36
 Swinit[Swinit < 0] = 0
 Swinit[Swinit > 1] = 1
     
@@ -132,8 +132,8 @@ for j in range(niter-1):
     mprop = CorrelatedSimulation(mtrend, varfrac * sigma0, sigmatime)
     Phiprop = mprop[:,0]
     Swprop = mprop[:,1]
-    Phiprop[Phiprop < 0] = 0
-    Phiprop[Phiprop > 0.4] = 0.4
+    Phiprop[Phiprop < 0.01] = 0.01
+    Phiprop[Phiprop > 0.36] = 0.36
     Swprop[Swprop < 0] = 0
     Swprop[Swprop > 1] = 1
 
@@ -176,6 +176,25 @@ postsw = postmodels[nm:,:]
 Phipredicted = np.mean(postphi, axis=1)
 Swpredicted = np.mean(postsw, axis=1)
 
+ndiphi = 401
+ndisw = 1001
+phiv = np.linspace(0, 0.4, ndiphi)
+swv = np.linspace(0, 1, ndisw)
+PhiMAP = np.zeros((postphi.shape[0],1))
+SwMAP = np.zeros((postphi.shape[0],1))
+for i in range(postphi.shape[0]):
+    phivind = np.zeros((ndiphi,1))
+    swvind = np.zeros((ndisw,1))
+    for j in range(postphi.shape[1]):
+        jj = np.argmin( np.abs(phiv-postphi[i,j]))
+        phivind[jj]=phivind[jj]+1
+        jj = np.argmin( np.abs(swv-postsw[i,j]))
+        swvind[jj]=swvind[jj]+1
+    kk = np.argmax(phivind)
+    PhiMAP[i]=phiv[kk]    
+    kk = np.argmax(swvind)
+    SwMAP[i]=swv[kk] 
+
 plt.figure(3)
 plt.subplot(131)
 ax = plt.subplot(141)
@@ -190,6 +209,7 @@ ax = plt.subplot(132)
 plt.plot(postphi, Time, 'b')
 plt.plot(Phi, Time, 'k')
 plt.plot(Phipredicted, Time, 'r')
+plt.plot(PhiMAP, Time, 'g')
 plt.grid()
 plt.ylim(max(Time),min(Time))
 plt.xlabel('Porosity')
@@ -200,6 +220,7 @@ ax = plt.subplot(133)
 plt.plot(postsw, Time, 'b')
 plt.plot(Sw, Time, 'k')
 plt.plot(Swpredicted, Time, 'r')
+plt.plot(SwMAP, Time, 'g')
 plt.grid()
 plt.ylim([max(Time), min(Time)])
 plt.xlabel('Water saturation')
