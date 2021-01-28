@@ -15,14 +15,16 @@ from numpy import matlib
 
 #% Application4
 # Load data (seismic data and time)
-s = loadmat('Data/1Ddata.mat')
-TimeSeis = s['TimeSeis']
-Snear = s['Snear']
-Smid = s['Smid']
-Sfar = s['Sfar']
-Vp = s['Vp']
-Vs = s['Vs']
-Rho = s['Rho']
+x = np.loadtxt('Data/1Ddatalog.dat')
+Rho = x[:,4].reshape(-1, 1)
+Time = x[:,6].reshape(-1, 1)
+Vp = x[:,7].reshape(-1, 1)
+Vs = x[:,8].reshape(-1, 1)
+s= np.loadtxt('Data/1Ddataseis.dat')
+Sfar = s[:,0].reshape(-1, 1)
+Smid = s[:,1].reshape(-1, 1)
+Snear = s[:,2].reshape(-1, 1)
+TimeSeis = s[:,3].reshape(-1, 1)
 
 #% Initial parameters
 # number of samples (elastic properties)
@@ -63,7 +65,7 @@ sigmaprior = np.kron(sigma0, sigmatime)
 
 #% Seismic inversion
 Seis = np.vstack([Snear, Smid, Sfar])
-mmap, mlp, mup, Time = SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior, sigmaprior, sigmaerr, wavelet, theta, nv)
+mmap, mlp, mup, t = SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior, sigmaprior, sigmaerr, wavelet, theta, nv)
 
 Vpmap = mmap[0:nm,0]
 Vsmap = mmap[nm:2*nm,0]

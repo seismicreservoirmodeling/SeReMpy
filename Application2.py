@@ -15,11 +15,11 @@ from Facies import *
 
 #% Application2
 # data
-x = loadmat('Data/1Ddata.mat')
-Phi = x['Phi']
-Vp = x['Vp']
-Facies = x['Facies']
-Depth = x['Depth']
+x = np.loadtxt('Data/1Ddatalog.dat')
+Depth = x[:,1].reshape(-1, 1)
+Facies = x[:,2].reshape(-1, 1)
+Phi = x[:,3].reshape(-1, 1)
+Vp = x[:,7].reshape(-1, 1)
 
 # available data - porosity
 dcoords = Depth[::10]

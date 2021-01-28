@@ -18,14 +18,16 @@ from numpy import matlib
 
 #% Application5
 # Load data (seismic data and time)
-s = loadmat('Data/1Ddatab.mat')
-TimeSeis = s['TimeSeis']
-Snear = s['Snear']
-Smid = s['Smid']
-Sfar = s['Sfar']
-Phi = s['Phi']
-Sw = s['Sw']
-Time = s['Time']
+x = np.loadtxt('Data/1Ddatablog.dat')
+Depth = x[:,0].reshape(-1, 1)
+Phi = x[:,1].reshape(-1, 1)
+Sw = x[:,2].reshape(-1, 1)
+Time = x[:,3].reshape(-1, 1)
+s= np.loadtxt('Data/1Ddatabseis.dat')
+Sfar = s[:,0].reshape(-1, 1)
+Smid = s[:,1].reshape(-1, 1)
+Snear = s[:,2].reshape(-1, 1)
+TimeSeis = s[:,3].reshape(-1, 1)
 
 #% Initial parameters
 # number of samples (elastic properties)

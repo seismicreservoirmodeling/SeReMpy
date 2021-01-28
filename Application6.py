@@ -14,17 +14,22 @@ from Inversion import *
 from numpy import matlib
 
 
-
 #% Application2
 # Load data (seismic data and time)
-s = loadmat('Data/2Ddata.mat')
-TimeSeis = s['TimeSeis']
-Snear = s['Snear']
-Smid = s['Smid']
-Sfar = s['Sfar']
-Vp = s['Vp']
-Vs = s['Vs']
-Rho = s['Rho']
+E = np.loadtxt('Data/2Ddataelas.dat')
+nx = 67
+ny = 85
+Vp = E[:,0].reshape(nx, ny)
+Vs = E[:,1].reshape(nx, ny)
+Rho = E[:,2].reshape(nx, ny)
+Time = E[:,3].reshape(nx, ny)
+S = np.loadtxt('Data/2Ddataseis.dat')
+nx = 66
+ny = 85
+Snear = S[:,0].reshape(nx, ny)
+Smid = S[:,1].reshape(nx, ny)
+Sfar = S[:,2].reshape(nx, ny)
+TimeSeis = S[:,3].reshape(nx, ny)
 
 #% Initial parameters
 # number of traces
@@ -77,7 +82,7 @@ Rhomap = np.zeros((nm,ntr))
 for i in range(ntr):
     Seis = np.vstack([Snear[:,i], Smid[:,i], Sfar[:,i]])
     Seis = np.reshape(Seis, (Seis.shape[0]*(nm-1),1))
-    mmap, mlp, mup, Time = SeismicInversion(Seis, TimeSeis[:,i], Vpprior[:,i], Vsprior[:,i], Rhoprior[:,i], sigmaprior, sigmaerr, wavelet, theta, nv)
+    mmap, mlp, mup, t = SeismicInversion(Seis, TimeSeis[:,i], Vpprior[:,i], Vsprior[:,i], Rhoprior[:,i], sigmaprior, sigmaerr, wavelet, theta, nv)
     Vpmap[:,i] = mmap[0:nm,0]
     Vsmap[:,i] = mmap[nm:2*nm,0]
     Rhomap[:,i] = mmap[2*nm :,0]
@@ -109,6 +114,7 @@ cbar.set_label('Seismic', rotation=270)
 plt.title('Far')
 plt.ylim(max(TimeSeis[:,0]),min(TimeSeis[:,0]))
 plt.subplot(322)
+Time = Time[:,0];
 plt.pcolor(np.linspace(1,ntr,ntr), Time, Vpmap)
 plt.xlabel('Trace number')
 plt.ylabel('Time (s)')

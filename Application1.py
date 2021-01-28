@@ -14,15 +14,16 @@ from Facies import *
 
 #% Application1
 # data
-x = loadmat('Data/1Ddata.mat')
-Phi = x['Phi']
-Clay = x['Clay']
-Sw = x['Sw']
-Vp = x['Vp']
-Vs = x['Vs']
-Rho = x['Rho']
-Facies = x['Facies']
-Depth = x['Depth']
+x = np.loadtxt('Data/1Ddatalog.dat')
+Clay = x[:,0].reshape(-1, 1)
+Depth = x[:,1].reshape(-1, 1)
+Facies = x[:,2].reshape(-1, 1)
+Phi = x[:,3].reshape(-1, 1)
+Rho = x[:,4].reshape(-1, 1)
+Sw = x[:,5].reshape(-1, 1)
+Vp = x[:,7].reshape(-1, 1)
+Vs = x[:,8].reshape(-1, 1)
+
 
 # Rock physics
 # Initial parameters

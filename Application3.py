@@ -14,15 +14,18 @@ from Geostats import *
 
 
 #% Application3  (temperature Yellowstone)
-E = loadmat('Data/ElevationData.mat')
-X = E['X']
-Y = E['Y']
-Z = E['Z']
-T = E['T']
-dt = E['dt']
-dx = E['dx']
-dy = E['dy']
-dz = E['dz']
+E = np.loadtxt('Data/ElevationData.dat')
+nx = 123
+ny = 292
+X = E[:,0].reshape(nx, ny)
+Y = E[:,1].reshape(nx, ny)
+Z = E[:,2].reshape(nx, ny)
+T = E[:,3].reshape(nx, ny)
+d = np.loadtxt('Data/data6full.dat')
+dx = d[:,0].reshape(-1, 1)
+dy = d[:,1].reshape(-1, 1)
+dz = d[:,2].reshape(-1, 1)
+dt = d[:,3].reshape(-1, 1)
 
 # # available data (100 measurements)
 dcoords = np.hstack([dx,dy])

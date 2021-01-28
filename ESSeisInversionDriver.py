@@ -20,15 +20,16 @@ from Geostats import CorrelatedSimulation
 
 #% Available data and parameters
 # Load data (seismic data and time)
-s = loadmat('Data/data3.mat')
-TimeSeis = s['TimeSeis']
-Snear = s['Snear']
-Smid = s['Smid']
-Sfar = s['Sfar']
-Vp = s['Vp']
-Vs = s['Vs']
-Rho = s['Rho']
-Time = s['Time']
+ds = np.loadtxt('Data/data3seis.dat')
+TimeSeis = ds[:,0].reshape(-1, 1)
+Snear = ds[:,1].reshape(-1, 1)
+Smid = ds[:,2].reshape(-1, 1)
+Sfar = ds[:,3].reshape(-1, 1)
+dl = np.loadtxt('Data/data3log.dat')
+Vp = dl[:,0].reshape(-1, 1)
+Vs = dl[:,1].reshape(-1, 1)
+Rho = dl[:,2].reshape(-1, 1)
+Time = dl[:,3].reshape(-1, 1)
 
 
 #% Initial parameters

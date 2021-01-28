@@ -22,11 +22,11 @@ from Geostats import *
 from Facies import *
 
 # available data
-x = loadmat('Data/data4.mat')
-Vp = x['Vp']
-Rho = x['Rho']
-Depth = x['Depth']
-Facies = x['Facies']
+x = np.loadtxt('Data/data4.dat')
+Depth = x[:,1].reshape(-1, 1)
+Facies = x[:,2].reshape(-1, 1)
+Rho = x[:,4].reshape(-1, 1)
+Vp = x[:,7].reshape(-1, 1)
 Facies = Facies-1
 Facies = Facies.astype(int)
 data =  np.hstack([Vp, Rho])

@@ -19,14 +19,16 @@ from Inversion import *
 
 #% Available data and parameters
 # Load data (seismic data and time)
-s = loadmat('Data/data3.mat')
-TimeSeis = s['TimeSeis']
-Snear = s['Snear']
-Smid = s['Smid']
-Sfar = s['Sfar']
-Vp = s['Vp']
-Vs = s['Vs']
-Rho = s['Rho']
+ds = np.loadtxt('Data/data3seis.dat')
+TimeSeis = ds[:,0].reshape(-1, 1)
+Snear = ds[:,1].reshape(-1, 1)
+Smid = ds[:,2].reshape(-1, 1)
+Sfar = ds[:,3].reshape(-1, 1)
+dl = np.loadtxt('Data/data3log.dat')
+Vp = dl[:,0].reshape(-1, 1)
+Vs = dl[:,1].reshape(-1, 1)
+Rho = dl[:,2].reshape(-1, 1)
+Time = dl[:,3].reshape(-1, 1)
 
 #% Initial parameters
 # number of samples (elastic properties)
@@ -50,6 +52,7 @@ wavelet, tw = RickerWavelet(freq, dt, ntw)
 
 #% Plot seismic data
 plt.figure(1)
+plt.subplot(131)
 plt.plot(Snear, TimeSeis, 'k')
 plt.grid()
 plt.ylim(max(TimeSeis),min(TimeSeis))
@@ -86,7 +89,7 @@ sigmaprior = np.kron(sigma0, sigmatime)
 
 #% Seismic inversion
 Seis = np.vstack([Snear, Smid, Sfar])
-mmap, mlp, mup, Time = SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior, sigmaprior, sigmaerr, wavelet, theta, nv)
+mmap, mlp, mup, t = SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior, sigmaprior, sigmaerr, wavelet, theta, nv)
 
 Vpmap = mmap[0:nm,0]
 Vsmap = mmap[nm:2*nm,0]
