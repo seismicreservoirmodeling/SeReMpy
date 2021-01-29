@@ -20,11 +20,11 @@ from Inversion import *
 
 #% Available data and parameters
 # Load data (elastic properties and depth)
-l = loadmat('Data/data2.mat')
-Depth = l['Depth']
-Vp = l['Vp']
-Vs = l['Vs']
-Rho = l['Rho']
+dl = np.loadtxt('Data/data2.dat')
+Depth = dl[:,0].reshape(-1, 1)
+Rho = dl[:,1].reshape(-1, 1)
+Vp = dl[:,3].reshape(-1, 1)
+Vs = dl[:,4].reshape(-1, 1)
 
 #% Initial parameters
 # number of variables

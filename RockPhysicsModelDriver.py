@@ -29,9 +29,9 @@ from RockPhysics import *
 
 #% Available data and parameters
 # Load data (porosity and depth)
-x = loadmat('Data/data1.mat')
-Phi = x['Phi']
-Depth = x['Depth']
+x = np.loadtxt('Data/data1.dat')
+Depth = x[:,0].reshape(-1, 1)
+Phi = x[:,1].reshape(-1, 1)
 
 
 # Initial parameters

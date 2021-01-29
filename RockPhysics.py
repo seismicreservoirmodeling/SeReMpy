@@ -163,7 +163,7 @@ def MatrixFluidModel(Kminc, Gminc, Rhominc, Volminc, Kflc, Rhoflc, Sflc, patchy)
         # Reuss average (shear)
         GmatR[i]= 1. / np.sum((Volminc[i,:] / Gminc) / np.sum(Volminc[i,:]))
         # Voigt-Reuss-Hill average (shear)
-        Gmat[i] = 0.5 * (GmatV(i) + GmatR(i))
+        Gmat[i] = 0.5 * (GmatV[i] + GmatR[i])
         # linear average for matrix density
         Rhomat[i] = np.sum((Volminc[i,:] * Rhominc) / np.sum(Volminc[i,:]))
         if patchy == 0:

@@ -32,18 +32,18 @@ from Inversion import *
 
 #% Available data and parameters
 # Load data (seismic data and time)
-x = loadmat('Data/data4.mat')
-Vp = x['Vp']
-Vs = x['Vs']
-Rho = x['Rho']
-Depth = x['Depth']
-Facies = x['Facies']
-Phi = x['Phi']
-Clay = x['Clay']
-Sw = x['Sw']
-Vprpm = x['Vprpm']
-Vsrpm = x['Vsrpm']
-Rhorpm = x['Rhorpm']
+x = np.loadtxt('Data/data4.dat')
+Clay = x[:,0].reshape(-1, 1)
+Depth = x[:,1].reshape(-1, 1)
+Facies = x[:,2].reshape(-1, 1)
+Phi = x[:,3].reshape(-1, 1)
+Rho = x[:,4].reshape(-1, 1)
+Rhorpm = x[:,5].reshape(-1, 1)
+Sw = x[:,6].reshape(-1, 1)
+Vp = x[:,7].reshape(-1, 1)
+Vprpm = x[:,8].reshape(-1, 1)
+Vs = x[:,9].reshape(-1, 1)
+Vsrpm = x[:,10].reshape(-1, 1)
 
 Facies = Facies-1
 Facies = Facies.astype(int)
@@ -271,12 +271,15 @@ plt.show()
 # % Non-parametric case (Kernel density estimation)
 ## Inefficient implementation ##
 
-# phidomain = np.arange(0,0.425,0.025)
-# cdomain = np.arange(0,0.85,0.05)
-# swdomain = np.arange(0,1.05,0.05)
-# P, V, S, VP, VS, R= np.mgrid[0:0.425:0.025, 0:0.85:0.05, 0:1.05:0.05, min(Vp):max(Vp):(max(Vp)-min(Vp))/20, min(Vs):max(Vs):(max(Vs)-min(Vs))/20, min(Rho):max(Rho):(max(Rho)-min(Rho))/20]
+# # phidomain = np.arange(0,0.425,0.025)
+# # cdomain = np.arange(0,0.85,0.05)
+# # swdomain = np.arange(0,1.05,0.05)
+# P, V, S, VP, VS, R= np.mgrid[0:0.42:0.02, 0:0.85:0.05, 0:1.05:0.05, min(Vp):max(Vp):(max(Vp)-min(Vp))/30, min(Vs):max(Vs):(max(Vs)-min(Vs))/30, min(Rho):max(Rho):(max(Rho)-min(Rho))/30]
 # jointdomain = np.vstack([P.ravel(), V.ravel(), S.ravel(), VP.ravel(), VS.ravel(), R.ravel()])
 # datadomain = np.vstack([VP[0,0,0,:,0,0], VS[0,0,0,0,:,0], R[0,0,0,0,0,:]])
+# phidomain=P[:,0,0,0,0,0]
+# cdomain=V[0,:,0,0,0,0]
+# swdomain=S[0,0,:,0,0,0]
 # jointdim = P.shape 
 # mdim = P[:,:,:,0,0,0].shape 
 # # # inversion

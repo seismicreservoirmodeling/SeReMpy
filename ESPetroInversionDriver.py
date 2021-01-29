@@ -21,18 +21,19 @@ from RockPhysics import LinearizedRockPhysicsModel
 
 #% Available data and parameters
 # Load data (seismic data, reference petroelastic properties, and time)
-s = loadmat('Data/data5.mat')
-TimeSeis = s['TimeSeis']
-Snear = s['Snear']
-Smid = s['Smid']
-Sfar = s['Sfar']
-Phi = s['Phi']
-Clay = s['Clay']
-Sw = s['Sw']
-Time = s['Time']
-Vp = s['Vp']
-Vs = s['Vs']
-Rho = s['Rho']
+ds = np.loadtxt('Data/data5seis.dat')
+TimeSeis = ds[:,0].reshape(-1, 1)
+Snear = ds[:,1].reshape(-1, 1)
+Smid = ds[:,2].reshape(-1, 1)
+Sfar = ds[:,3].reshape(-1, 1)
+dl = np.loadtxt('Data/data5log.dat')
+Phi = dl[:,0].reshape(-1, 1)
+Clay = dl[:,1].reshape(-1, 1)
+Sw = dl[:,2].reshape(-1, 1)
+Time = dl[:,3].reshape(-1, 1)
+Vp = dl[:,4].reshape(-1, 1)
+Vs = dl[:,5].reshape(-1, 1)
+Rho = dl[:,6].reshape(-1, 1)
 
 #% Initial parameters
 # number of samples (elastic properties)
