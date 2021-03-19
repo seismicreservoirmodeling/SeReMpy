@@ -43,7 +43,7 @@ plt.colorbar()
 plt.show()
 
 # indicator kriging
-ikp, ikmap = IndicatorKriging(xcoords, dcoords, fvalues, nf, pprior, l, krigtype)
+ikp, ikmap = IndicatorKriging(xcoords, dcoords, fvalues, nf, pprior, float(l), krigtype)
 
 
 # simulation
