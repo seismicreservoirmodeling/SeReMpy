@@ -9,6 +9,7 @@ import numpy as np
 from scipy.stats import multivariate_normal
 from scipy import stats
 
+
 def BayesGaussFaciesClass(data, fprior, muprior, sigmaprior):
     """
     BAYES GAUSS FACIES CLASS

@@ -7,7 +7,7 @@ __pycache__/
 # VSCode settings
 .vscode
 .code-workspace
-squit.code-workspace
+serempy.code-workspace
 
 # Distribution / packaging
 .Python
