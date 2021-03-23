@@ -381,6 +381,10 @@ def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, k
     pathcoords = nonsimcoords[pathind, :]
     simval = np.zeros((npl, 1))
 
+    # if the xmean is a single value, transform to an array
+    if type(xmean) == float:
+        xmean = xmean*np.ones((n, 1))
+
     # sequential simulation
     for i in range(npl):
         if dcoords.shape[0] < nmax:
@@ -396,7 +400,7 @@ def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, k
 
         # kriging
         if krig == 0:
-            krigmean, krigvar = SimpleKriging(pathcoords[i,:], dc, dz, xmean, xvar, l, krigtype)
+            krigmean, krigvar = SimpleKriging(pathcoords[i,:], dc, dz, xmean[pathind[i]], xvar, l, krigtype)
         else:
             krigmean, krigvar = OrdinaryKriging(pathcoords[i,:], dc, dz, xvar, l, krigtype)
   
