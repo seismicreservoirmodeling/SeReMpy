@@ -37,6 +37,7 @@ def CorrelatedSimulation(mprior, sigma0, sigmaspace):
     
     return msim
 
+
 def ExpCov(h, l):
 
     # EXP COV computes the exponential covariance function
@@ -51,6 +52,7 @@ def ExpCov(h, l):
     
     return C
 
+
 def GauCov(h, l):
 
     # GAU COV computes the Gaussian covariance function
@@ -64,6 +66,7 @@ def GauCov(h, l):
     C = np.exp(-3 * h ** 2 / l ** 2)
     
     return C
+
 
 def SphCov(h, l):
 
@@ -80,6 +83,7 @@ def SphCov(h, l):
     C[h <= l] = 1 - 3 / 2 * h[h <= l] / l + 1 / 2 * h[h <= l] ** 3 / l ** 3
 
     return C
+
 
 def GaussianSimulation(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype, krig):
 
@@ -107,6 +111,7 @@ def GaussianSimulation(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype, krig)
     sgsim = krigmean + np.sqrt(krigvar) * np.random.randn(1)
     
     return sgsim
+
 
 def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
 
@@ -164,6 +169,7 @@ def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
     
     return ikp, ikmap
 
+
 def OrdinaryKriging(xcoord, dcoords, dvalues, xvar, l, krigtype):
 
     # ORDINARY KRIGING computes the ordinary kriging estimate and variance 
@@ -203,6 +209,7 @@ def OrdinaryKriging(xcoord, dcoords, dvalues, xvar, l, krigtype):
     
     return xok, xvarok
 
+
 def SimpleKriging(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype):
 
     # SIMPLE KRIGING computes the simple kriging estimate and variance 
@@ -240,7 +247,8 @@ def SimpleKriging(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype):
     xvarsk = xvar - np.sum(wkrig * krigvect)
     
     return xsk, xvarsk
-    
+
+
 def MarkovChainSimulation(T, ns, nsim):
 
     # MARKOV CHAIN SIMULATION simulates 1D realizations of a discrete random 
@@ -267,6 +275,7 @@ def MarkovChainSimulation(T, ns, nsim):
     
     return fsim
 
+
 def RadialCorrLength(lmin, lmax, azim, theta):
 
     # RADIAL CORR LENGTH computes the radial correlation length 
@@ -282,6 +291,7 @@ def RadialCorrLength(lmin, lmax, azim, theta):
     l = np.sqrt((lmin ** 2 * lmax ** 2) / (lmax ** 2 * (np.sin(azim - theta)) ** 2 + lmin ** 2 * (np.cos(azim - theta)) ** 2))
                                               
     return l
+
 
 def SpatialCovariance1D(h, l, krigtype):
 
@@ -304,7 +314,8 @@ def SpatialCovariance1D(h, l, krigtype):
         print('error')   
         
     return C
-    
+
+
 def SpatialCovariance2D(lmin, lmax, azim, theta, h, krigtype):
 
     # SPATIAL COVARIANCE 2D computes the 2D anisotropic spatial covariance 
@@ -330,6 +341,7 @@ def SpatialCovariance2D(lmin, lmax, azim, theta, h, krigtype):
         print('error')    
         
     return C    
+
 
 def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, krig):
 
@@ -399,6 +411,7 @@ def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, k
     
     return sgsim
 
+
 def SeqIndicatorSimulation(xcoords, dcoords, dvalues, nf, pprior, l, krigtype):
 
     # SEQ INDICATOR SIMULATION  generates a realization of the discrete random 
@@ -464,6 +477,7 @@ def SeqIndicatorSimulation(xcoords, dcoords, dvalues, nf, pprior, l, krigtype):
     
     return sgsim
 
+
 def RandDisc(p):
 
     # RANDDISC samples a discrete random variable with a given probability
@@ -481,6 +495,3 @@ def RandDisc(p):
         s = s + p[0,index]
     
     return index
-
-                                 
-   

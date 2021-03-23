@@ -197,6 +197,8 @@ for i in range(postphi.shape[0]):
     kk = np.argmax(swvind)
     SwMAP[i]=swv[kk] 
 
+
+# plot originale
 plt.figure(3)
 plt.subplot(131)
 ax = plt.subplot(141)
@@ -230,3 +232,25 @@ ax.set_yticks(yticks)
 ax.set_yticklabels([])
 plt.show()
 
+# proposed plot by aadm
+f, ax = plt.subplots(ncols=3, constrained_layout=True, sharey=True)
+ax[0].plot(Snear-0.1, TimeSeis, 'k')
+ax[0].plot(Smid, TimeSeis, 'k')
+ax[0].plot(Sfar+0.1, TimeSeis, 'k')
+ax[0].set_ylim(max(TimeSeis),min(TimeSeis))
+ax[0].set_xlabel('Seismic')
+ax[0].set_ylabel('Time (s)')
+
+ax[1].plot(postphi[:,::50], Time, '.5', lw=1, alpha=0.1)
+ax[1].plot(Phi, Time, 'k')
+ax[1].plot(Phipredicted, Time, 'r')
+ax[1].plot(PhiMAP, Time, 'g')
+ax[1].set_xlabel('Porosity')
+
+ax[2].plot(postsw[:,::50], Time, '.5',lw=1, alpha=0.1)
+ax[2].plot(Sw, Time, 'k')
+ax[2].plot(Swpredicted, Time, 'r')
+ax[2].plot(SwMAP, Time, 'g')
+ax[2].set_xlabel('Water saturation')
+ax[0].set_ylim(max(TimeSeis),min(TimeSeis))
+plt.show()
