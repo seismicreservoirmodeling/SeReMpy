@@ -145,7 +145,7 @@ def LinearizedRockPhysicsModel(Phi, Clay, Sw, R):
     Clay : float
         Clay volume (unitless).
     Sw : float
-        Shear modulus of dry rock
+        Water saturation (unitless)
     R : float
         Regression coefficients matrix
         estimated with regress.m
@@ -180,9 +180,9 @@ def MatrixFluidModel(Kminc, Gminc, Rhominc, Volminc, Kflc,
     Kminc : array_like
         1D array of mineral bulk moduli (GPa).
     Gminc : array_like
-        1D array of mineral shear moduli(GPa).
+        1D array of mineral shear moduli (GPa).
     Rhominc : array_like
-        1D array of mineral densities(g/cc).
+        1D array of mineral densities (g/cc).
     Volminc : array_like
         2D array of mineral volumes.
     Kflc : array_like
