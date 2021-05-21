@@ -3,8 +3,9 @@
 """
 Created on Sat Jan 16 16:12:09 2021
 
-Reference: Grana and De Figueiredo, 2021, SeReMpy - Equations 7 and 8
+@author: dariograna
 
+Reference: Grana and De Figueiredo, 2021, SeReMpy - Equations 7 and 8
 """
 
 from scipy.io import loadmat

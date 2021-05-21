@@ -3,6 +3,9 @@
 """
 Created on Tue Nov 17 17:43:29 2020
 
+@author: dariograna
+
+Reference: Grana and De Figueiredo, 2021, SeReMpy
 """
 
 #% Rock Physics Model Driver %%

@@ -3,6 +3,9 @@
 """
 Created on Thu Nov 19 18:42:46 2020
 
+@author: dariograna
+
+Reference: Grana and De Figueiredo, 2021, SeReMpy
 """
 
 #% Seismic inversion Driver %%

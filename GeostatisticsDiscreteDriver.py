@@ -3,6 +3,9 @@
 """
 Created on Wed Nov 18 18:02:21 2020
 
+@author: dariograna
+
+Reference: Grana and De Figueiredo, 2021, SeReMpy
 """
 
 #% Geostatistics Discrete Driver %%

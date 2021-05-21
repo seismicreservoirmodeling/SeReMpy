@@ -10,18 +10,28 @@ from scipy import stats
 
 def BayesGaussFaciesClass(data, fprior, muprior, sigmaprior):
     """
-    BAYES GAUSS FACIES CLASS computes the Bayesian facies classification of
-    the data assuming a Gaussian distribution
-    Parameters:
-          data = input data (ns,nv)
-          fprior = prior facies proportions (nf,1)
-          muprior = prior means on input variables (nf,nv)
-          sigmaprior = prior covariancce matrices on input variables (nv,nv,nf)
-    Returns:
-           fmap = facies maximum a posteriori (ns,1)
-           fpost = posterior facies probability (ns,nf)
+    BAYES GAUSS FACIES CLASS
+    Computes the Bayesian facies classification of
+    the data assuming a Gaussian distribution.
+    Written by Dario Grana (August 2020)
 
-    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 6.1
+    Parameters
+    ----------
+    data : array_like
+        Input data (ns, nv).
+    fprior : array_like
+        Prior facies proportions (nf, 1).
+    muprior : array_like
+        Prior means on input variables (nf, nv).
+    sigmaprior : array_like
+        Prior covariance matrices on input
+        variables (nv, nv, nf).
+    Returns
+    -------
+    fmap : array_like
+        Facies maximum a posteriori (ns, 1).
+    fpost : array_like
+        Posterior facies probability (ns, nf).    
 
     """
 
@@ -44,21 +54,30 @@ def BayesGaussFaciesClass(data, fprior, muprior, sigmaprior):
     
 def BayesKDEFaciesClass(data, dtrain, ftrain, fprior, domain):
     """
-    BAYES KDE FACIES CLASS computes the Bayesian facies classification of
-    the data assuming a non-parametric distribution
-    Parameters:
-          data = input data (ns,nv)
-          dtrain = training data (ntrain,nv)
-          ftrain = training facies (ntrain,1)
-          fprior = prior facies proportions (nf,1)
-          domain = discretized domain of input vairables 
-                   (generated using meshgrid)
-    Returns:
-           facies maximum a posteriori (ns,1)
-           fpost = posterior facies probability (ns,nf)
+    BAYES KDE FACIES CLASS
+    Computes the Bayesian facies classification of
+    the data assuming a non-parametric distribution.
+    Written by Dario Grana (August 2020)
 
-    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 6.1
-
+    Parameters
+    ----------
+    data : array_like
+        Input data (ns, nv).
+    dtrain : array_like
+        Training data (ntrain, nv).
+    ftrain : array_like
+        Training facies (ntrain, 1).
+    fprior : array_like
+        Prior facies proportions (nf, 1).
+    domain : array_like
+        Discretized domain of input variables
+        (generated using meshgrid).
+    Returns
+    -------
+    fmap : array_like
+        Facies maximum a posteriori (ns, 1).
+    fpost : array_like
+        Posterior facies probability (ns, nf).
     """
 
     # initial parameters
@@ -93,17 +112,22 @@ def BayesKDEFaciesClass(data, dtrain, ftrain, fprior, domain):
     
 def ConfusionMatrix(ftrue, fpred, nf):
     """
-     CONFUSION MATRIX computes the confusion matrix of a discrete
-     classification
-     Parameters:
-          ftrue = true model
-           fpred = predicted model
-           nf = number of possible outcomes (e.g. number of facies)
-     Returns:
-           confmat = confusion matrix (absolute frequencies)
-
-    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 6.1
-
+    CONFUSION MATRIX
+    Computes the confusion matrix of a discrete classification.
+    Written by Dario Grana (August 2020)
+    
+    Parameters
+    ----------
+    ftrue : array_like
+        true model
+    fpred : array_like
+        predicted model
+    nf : int
+        number of possible outcomes (e.g. number of facies)
+    Returns
+    -------
+    confmat : array_like
+        confusion matrix (absolute frequencies)
     """
 
      ns = ftrue.shape[0]

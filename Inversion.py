@@ -3,6 +3,8 @@
 """
 Created on Thu Nov 19 15:30:38 2020
 
+@author: dariograna
+
 """
 import numpy as np
 from scipy.linalg import toeplitz
@@ -13,15 +15,25 @@ from scipy import stats
 
 def AkiRichardsCoefficientsMatrix(Vp, Vs, theta, nv):
     """
-    AKI RICHARDS COEFFICIENTS MATRIX computes the Aki Richards coefficient
-    matrix
-    Parameters:
-          Vp = P-wave velocity profile
-          Vs = S-wave velocity profile
-          theta = vector of reflection angles
-          nv = number of model variables 
-    Returns:
-           A = Aki Richards coefficients matrix
+    AKI RICHARDS COEFFICIENTS MATRIX
+    Computes the Aki Richards coefficient matrix.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    Vp : array_like 
+        P-wave velocity profile (km/s).
+    Vs : float or array_like 
+        S-wave velocity profile (km/s).
+    theta : float or array_like
+        Reflection angles.
+    nv : int
+        Number of model variables.
+
+    Returns
+    -------
+    A : array_like
+        Aki Richards coefficients matrix.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
@@ -49,13 +61,21 @@ def AkiRichardsCoefficientsMatrix(Vp, Vs, theta, nv):
     
 def DifferentialMatrix(nt, nv):
     """
-    DIFFERENTIAL MATRIX computes the differential matrix for discrete
-    differentiation
-    Parameters:
-          nt = number of samples
-          nv = numbr of model variables
-    Returns:
-           D = differential matrix
+    DIFFERENTIAL MATRIX
+    Computes the differential matrix for discrete differentiation.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    nt : int
+        Number of samples.
+    nv : int
+        Number of model variables.
+
+    Returns
+    -------
+    D : array_like 
+        Differential matrix.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
@@ -73,14 +93,25 @@ def DifferentialMatrix(nt, nv):
     
 def RickerWavelet(freq, dt, ntw):
     """
-    RICKER WAVELET computes the Ricker wavelet
-    Parameters:
-          freq = dominant frequency
-          dt = time sampling rate
-          ntw = number of samples of the wavelet
-    Returns:
-           w = wavelet
-           tw = wavelet time
+    RICKER WAVELET
+    Computes the Ricker wavelet.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    freq : int
+        Dominant frequency (Hz).
+    dt : int
+        Time sampling rate (s).
+    ntw : int
+        Number of samples of the wavelet.
+
+    Returns
+    -------
+    w : array_like
+        Wavelet.
+    tw : array_like
+        Two-way-time vector.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
@@ -93,24 +124,42 @@ def RickerWavelet(freq, dt, ntw):
 
 def SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior, sigmaprior, sigmaerr, wavelet, theta, nv):
     """
-    SEISMIC INVERSION computes the posterior distribution of elastic
-    properties according to the Bayesian linearized AVO inversion (Buland and
-    Omre, 2003)
-    Parameters:
-          Seis = vector of seismic data of size (nsamples x nangles, 1)
-          TimeSeis = vector of seismic time of size (nsamples, 1)
-          Vpprior = vector of prior (low frequency) Vp model (nsamples+1, 1)
-          Vsprior = vector of prior (low frequency) Vs model (nsamples+1, 1)
-          Rhoprior = vector of prior (low frequency) density model (nsamples+1, 1)
-          sigmaprior = prior covariance matrix (nv*(nsamples+1),nv*(nsamples+1))
-          sigmaerr = covariance matrix of the error (nv*nsamples,nv*nsamples)
-          theta = vector of reflection angles (1,nangles)
-          nv = number of model variables
-    Returns:
-           mmap = MAP of posterior distribution (nv*(nsamples+1),1)
-           mlp = P2.5 of posterior distribution (nv*(nsamples+1),1)
-           mup = P97.5 of posterior distribution (nv*(nsamples+1),1)
-           Time = time vector of elastic properties (nsamples+1,1)
+    SEISMIC INVERSION
+    Computes the posterior distribution of elastic properties according to
+    the Bayesian linearized AVO inversion (Buland and Omre, 2003).
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    Seis : array_like
+        Vector of seismic data (nsamples x nangles, 1).
+    TimeSeis : array_like
+        Vector of seismic time (nsamples, 1).
+    Vpprior : array_like
+        Vector of prior (low frequency) Vp model (nsamples+1, 1).
+    Vsprior : array_like
+        Vector of prior (low frequency) Vs model (nsamples+1, 1).
+    Rhoprior : array_like
+        Vector of prior (low frequency) density model (nsamples+1, 1).
+    sigmaprior : array_like
+        Prior covariance matrix (nv*(nsamples+1),nv*(nsamples+1)).
+    sigmaerr : array_like
+        Covariance matrix of the error (nv*nsamples,nv*nsamples).
+    theta : array_like
+        Vector of reflection angles (1, nangles).
+    nv : int
+        Number of model variables.
+
+    Returns
+    -------
+    mmap : array_like
+        MAP of posterior distribution (nv*(nsamples+1), 1).
+    mlp : array_like
+        P2.5 of posterior distribution (nv*(nsamples+1), 1).
+    mup : array_like
+        P97.5 of posterior distribution (nv*(nsamples+1), 1).
+    Time : array_like
+        time vector of elastic properties (nsamples+1, 1).
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.2
     Grana and De Figueiredo, 2021, SeReMpy - Equations 5 and 6
@@ -165,18 +214,31 @@ def SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior, sigmaprior, sig
     
 def SeismicModel(Vp, Vs, Rho, Time, theta, wavelet):
     """
-    SEISMIC MODEL computes synthetic seismic data according to a linearized
-    seismic model based on the convolution of a wavelet and the linearized
-    approximation of Zoeppritz equations
-    Parameters:
-          Vp = P-wave velocity profile
-          Vs = S-wave velocity profile
-          Rho = Density profile
-          theta = vector of reflection angles 
-          wavelet = wavelet
-    Returns:
-           Seis = vector of seismic data of size (nsamples x nangles, 1)
-           Time = seismic time  (nsamples, 1)
+    SEISMIC MODEL
+    Computes synthetic seismic data according to a linearized seismic model
+    based on the convolution of a wavelet and the linearized approximation
+    of Zoeppritz equations.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    Vp : array_like
+        P-wave velocity profile.
+    Vs : array_like
+        S-wave velocity profile.
+    Rho : array_like
+        Density profile.
+    theta : array_like
+        Vector of reflection angles.
+    wavelet : array_like
+        Wavelet.
+
+    Returns
+    -------
+    Seis : array_like
+        Vector of seismic data (nsamples x nangles, 1).
+    Time : array_like
+        Seismic times (nsamples, 1).
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
@@ -218,13 +280,23 @@ def SeismicModel(Vp, Vs, Rho, Time, theta, wavelet):
     
 def WaveletMatrix(wavelet, nsamples, ntheta):
     """
-    WAVELET MATRIX computes the wavelet matrix for discrete convolution
-    Parameters:
-          w = wavelet
-          nsamples = numbr of samples
-          ntheta = number of angles
-    Returns:
-           W = wavelet matrix
+    WAVELET MATRIX
+    Computes the wavelet matrix for discrete convolution.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    w : array_like
+        Wavelet.
+    ns : int
+        Number of samples.
+    ntheta : int
+        Number of angles.
+
+    Returns
+    -------
+    W : array_like
+        Wavelet matrix.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
@@ -242,12 +314,21 @@ def WaveletMatrix(wavelet, nsamples, ntheta):
 
 def convmtx(w, ns):
     """    
-    CONVMTX  computes the Toeplitz matrix for discrete convolution
-    Parameters:
-          w = wavelet
-          ns = numbr of samples
-    Returns:
-           C = Toeplitz matrix
+    CONVMTX
+    Computes the Toeplitz matrix for discrete convolution.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    w : array_like
+        Wavelet.
+    ns : int
+        Numbr of samples.
+
+    Returns
+    -------
+    C : array_like
+        Toeplitz matrix.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
@@ -259,26 +340,40 @@ def convmtx(w, ns):
         b = np.r_[w[0], np.zeros(ns - 1)]
         a = np.r_[w, np.zeros(ns - 1)]
     C = toeplitz(a, b)
+
     return C  
 
 def RockPhysicsGaussInversion(mtrain, dtrain, mdomain, dcond, sigmaerr):
     """
-    ROCK PHYSICS GAUSSIAN INVERSION computes the posterior distribution of
-    petrophysical properties conditioned on elastic properties assuming a
-    Gaussian distribution.
+    ROCK PHYSICS GAUSSIAN INVERSION
+    computes the posterior distribution of petrophysical properties
+    conditioned on elastic properties assuming a Gaussian distribution.
     The joint distribution of the Bayesian inversion approach is estimated
-    from a training dataset 
-    Parameters:
-          mtrain = training dataset of petrophysical properties (ntrain, nm)
-          dtrain = training dataset of elastic properties (ntrain, nd)
-          mdomain = discretized domain of petrophysical properties 
-                    (generated using meshgrid)
-          dcond = measured data (nsamples, nd)
-          sigmaerr = covariance matrix of the error (nd, nd)
-    Returns:
-           mupost = posterior mean (nsamples x nv, 1)
-           sigmapost = posterior covariance matrix (nv, nv) 
-           Ppost = joint posterior distribution 
+    from a training dataset.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    mtrain : array_like
+        Training dataset of petrophysical properties (ntrain, nm).
+    dtrain : array_like
+        Training dataset of elastic properties (ntrain, nd).
+    mdomain : array_like
+        Discretized domain of petrophysical properties
+        (generated using meshgrid).
+    dcond : array_like
+        Measured data (nsamples, nd).
+    sigmaerr : array_like
+        Covariance matrix of the error (nd, nd).
+
+    Returns
+    -------
+    mupost : array_like
+        Posterior mean (nsamples x nv, 1).
+    sigmapost : array_like
+        Posterior covariance matrix (nv, nv).
+    Ppost : array_like
+        Joint posterior distribution.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.4
     """
@@ -320,24 +415,39 @@ def RockPhysicsGaussInversion(mtrain, dtrain, mdomain, dcond, sigmaerr):
     
 def RockPhysicsGaussMixInversion(ftrain, mtrain, dtrain, mdomain, dcond, sigmaerr):
     """
-    ROCK PHYSICS GAUSS MIX INVERSION computes the posterior distribution of
-    petrophysical properties conditioned on elastic properties assuming a
-    Gaussian mixture distribution.
+    ROCK PHYSICS GAUSS MIX INVERSION
+    Computes the posterior distribution of petrophysical properties
+    conditioned on elastic properties assuming a Gaussian mixture distribution.
     The joint distribution of the Bayesian inversion approach is estimated
     from a training dataset 
-    Parameters:
-          ftrain = training dataset of facies (ntrain, 1)
-          mtrain = training dataset of petrophysical properties (ntrain, nm)
-          dtrain = training dataset of elastic properties (ntrain, nd)
-          mdomain = discretized domain of petrophysical properties 
-                    (generated using meshgrid)
-          dcond = measured data (nsamples, nd)
-          sigmaerr = covariance matrix of the error (nd, nd)
-    Returns:
-           mupost = posterior mean (nsamples x nv, 1)
-           sigmapost = posterior covariance matrix (nv, nv) 
-           fpost = posterior weights (facies proportions) (nsamples, 1) 
-           Ppost = joint posterior distribution 
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    ftrain : array_like
+        Training dataset of facies (ntrain, 1).
+    mtrain : array_like
+        Training dataset of petrophysical properties (ntrain, nm).
+    dtrain : array_like
+        Training dataset of elastic properties (ntrain, nd).
+    mdomain : array_like
+        Discretized domain of petrophysical properties
+        (generated using meshgrid).
+    dcond : array_like
+        Measured data (nsamples, nd).
+    sigmaerr : array_like
+        Covariance matrix of the error (nd, nd).
+
+    Returns
+    -------
+    mupost : array_like
+        Posterior mean (nsamples x nv, 1).
+    sigmapost : array_like
+        Posterior covariance matrix (nv, nv).
+    fpost : array_like
+        Posterior weights (facies proportions) (nsamples, 1).
+    Ppost : array_like
+        Joint posterior distribution.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.4
     """
@@ -406,21 +516,36 @@ def RockPhysicsGaussMixInversion(ftrain, mtrain, dtrain, mdomain, dcond, sigmaer
     
 def RockPhysicsLinGaussInversion(mum, sm, G, mdomain, dcond, sigmaerr):
     """
-    ROCK PHYSICS LINEAR GAUSSIAN INVERSION computes the posterior 
-    distribution petrophysical properties conditioned on elastic properties 
-    assuming a Gaussian distribution and a linear rock physics model
-    Parameters:
-          mum = prior mean of petrophysical propertiees (nv, 1)
-          sm = prior covariance matrix of petrophysical propertiees (nv, nv)
-          G = rock physics operator matrix
-          mdomain = discretized domain of petrophysical properties 
-                    (generated using meshgrid)
-          dcond = measured data (nsamples, nd)
-          sigmaerr = covariance matrix of the error (nd, nd)
-    Returns:
-           mupost = posterior mean (nsamples x nv, 1)
-           sigmapost = posterior covariance matrix (nv, nv) 
-           Ppost = joint posterior distribution 
+    ROCK PHYSICS LINEAR GAUSSIAN INVERSION
+    Computes the posterior distribution petrophysical properties
+    conditioned on elastic properties assuming a Gaussian distribution
+    and a linear rock physics model.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    mum : array_like
+        Prior mean of petrophysical properties (nv, 1).
+    sm : array_like
+        Prior covariance matrix of petrophysical properties (nv, nv).
+    G : array_like
+        Rock physics operator matrix.
+    mdomain : array_like
+        Discretized domain of petrophysical properties
+        (generated using meshgrid).
+    dcond : array_like
+        Measured data (nsamples, nd).
+    sigmaerr : array_like
+        Covariance matrix of the error (nd, nd).
+
+    Returns
+    -------
+    mupost : array_like
+        Posterior mean (nsamples x nv, 1).
+    sigmapost : array_like
+        Posterior covariance matrix (nv, nv).
+    Ppost : array_like
+        Joint posterior distribution.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.4
     """
@@ -452,23 +577,40 @@ def RockPhysicsLinGaussInversion(mum, sm, G, mdomain, dcond, sigmaerr):
     
 def RockPhysicsLinGaussMixInversion(pf, mum, sm, G, mdomain, dcond, sigmaerr):
     """
-    ROCK PHYSICS LINEAR GAUSS MIX INVERSION computes the posterior 
-    distribution petrophysical properties conditioned on elastic properties 
-    assuming a Gaussian mixture distribution and a linear rock physics model
-    Parameters:
-          pf =  prior weights (facies proportions) (nf, 1)
-          mum = prior means of petrophysical propertiees (nf, nv)
-          sm = prior covariance matrices of petrophysical propertiees (nv, nv, nf)
-          G = rock physics operator matrix
-          mdomain = discretized domain of petrophysical properties 
-                    (generated using meshgrid)
-          dcond = measured data (nsamples, nd)
-          sigmaerr = covariance matrix of the error (nd, nd)
-    Returns:
-           mupost = posterior mean (nsamples, nv, nf)
-           sigmapost = posterior covariance matrix (nv, nv, nf) 
-           fpost = posterior weights (nsamples, nf) 
-           Ppost = joint posterior distribution 
+    ROCK PHYSICS LINEAR GAUSS MIX INVERSION
+    Computes the posterior distribution petrophysical properties
+    conditioned on elastic properties assuming a Gaussian mixture
+    distribution and a linear rock physics model.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    pf : array_like
+        Prior weights (facies proportions) (nf, 1).
+    mum : array_like
+        Prior means of petrophysical properties (nf, nv).
+    sm : array_like
+        Prior covariance matrices of petrophysical properties (nv, nv, nf).
+    G : array_like
+        Rock physics operator matrix.
+    mdomain : array_like
+        Discretized domain of petrophysical properties
+        (generated using meshgrid).
+    dcond : array_like
+        Measured data (nsamples, nd).
+    sigmaerr : array_like
+        Covariance matrix of the error (nd, nd).
+
+    Returns
+    -------
+    mupost : array_like
+        Posterior mean (nsamples, nv, nf).
+    sigmapost : array_like
+        Posterior covariance matrix (nv, nv, nv).
+    fpost : array_like
+        Posterior weights (nsamples, nf).
+    Ppost : array_like
+        Joint posterior distribution.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.4
     """
@@ -520,21 +662,34 @@ def RockPhysicsLinGaussMixInversion(pf, mum, sm, G, mdomain, dcond, sigmaerr):
 
 def RockPhysicsKDEInversion(mtrain, dtrain, jointdimain, datadomain, dcond, jointdim, mdim):
     """
-    ROCK PHYSICS KDE INVERSION computes the posterior distribution of
-    petrophysical properties conditioned on elastic properties assuming a
-    non-parametric distribution.
+    ROCK PHYSICS KDE INVERSION
+    Computes the posterior distribution petrophysical properties
+    conditioned on elastic properties assuming a non-parametric distribution.
     The joint distribution of the Bayesian inversion approach is estimated
-    from a training dataset using Kernel Density Estimation
-    Parameters:
-          mtrain = training dataset of petrophysical properties (ntrain, nm)
-          dtrain = training dataset of elastic properties (ntrain, nd)
-          jointdimain = discretized domain of all properties 
-          datadomain = discretized vectors of elastic properties 
-          dcond = measured data (nsamples, nd)
-          jointdim  = dimension of joint distribution
-          mdim  = dimension of post distribution
-    Returns:
-           Ppost = posterior distribution 
+    from a training dataset using Kernel Density Estimation.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    mtrain : array_like
+        Training dataset of petrophysical properties (ntrain, nm).
+    dtrain : array_like
+        Training dataset of elastic properties (ntrain, nd).
+    jointdimain : array_like
+        Discretized domain of all properties.
+    datadomain : array_like
+        Discretized vectors of elastic properties.
+    dcond : array_like
+        Measured data (nsamples, nd).
+    jointdim : int
+        Dimension of joint distribution.
+    mdim : int
+        Dimension of post distribution.
+
+    Returns
+    -------
+    Ppost : array_like
+        Posterior distribution.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.4
     """
@@ -563,18 +718,30 @@ def RockPhysicsKDEInversion(mtrain, dtrain, jointdimain, datadomain, dcond, join
     
 def EnsembleSmootherMDA(PriorModels, SeisData, SeisPred, alpha, sigmaerr):
     """
-    ENSEMBLE SMOOTHER MDA computes the updated realizations of the
-    model variables conditioned on the assimilated data using the 
-    Ensemble Smoother Multiple Data Assimilation
-    Parameters:
-          PriorModels = prior models realizations (nm, ne) 
-          SeisData = measured seismic data (nd, 1)
-          SeisPred = predicted data (nd, ne)
-          alpha = inflation coefficient 
-          sigmaerr = covariance matrix of the error (nd, nd)
-    Returns:
-           PostModels = updated models realizations (nm, ne) 
-           KalmanGain = Kalman Gain Matrix'
+    ENSEMBLE SMOOTHER MDA
+    Computes the updated realizations of the model variables conditioned
+    on the assimilated data using the Ensemble Smoother Multiple Data Assimilation.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    PriorModels : array_like
+        Prior models realizations (nm, ne).
+    SeisData : array_like
+        Measured seismic data (nd, 1).
+    SeisPred : array_like
+        Predicted data (nd, ne).
+    alpha : array_like
+        Inflation coefficient.
+    sigmaerr : array_like
+        Covariance matrix of the error (nd, nd).
+
+    Returns
+    -------
+    PostModels : array_like
+        Updated models realizations (nm, ne).
+    KalmanGain : array_like
+        Kalman Gain Matrix.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.6
     """
@@ -598,14 +765,23 @@ def EnsembleSmootherMDA(PriorModels, SeisData, SeisPred, alpha, sigmaerr):
     
 def InvLogitBounded(w, minv, maxv):
     """
-    INVERSE LOGIT BOUNDED computes the inverse logit tranformation for
-    bounded variables
-    Parameters:
-          w = initial variable
-          minv = lower bound 
-          maxv = upper bound 
-    Returns:
-           index = transformed variable 
+    INVERSE LOGIT BOUNDED
+    Computes the inverse logit tranformation for bounded variables.
+    Written by Dario Grana (August 2020)
+
+    Parameters
+    ----------
+    w : 
+        Initial variable.
+    minv : float
+        Lower bound.
+    maxv : float
+        Upper bound.
+
+    Returns
+    -------
+    index : 
+        Transformed variable.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.6
     """
@@ -617,14 +793,21 @@ def InvLogitBounded(w, minv, maxv):
 
 def LogitBounded(v, minv, maxv):
     """
-    LOGIT BOUNDED computes the logit tranformation for
-    bounded variables
-    Parameters:
-          v = initial variable
-          minv = lower bound of the domain
-          maxv = upper bound of the domain
-    Returns:
-           index = transformed variable 
+    LOGIT BOUNDED
+    Computes the logit tranformation for bounded variables.
+    Written by Dario Grana (August 2020)
+    Parameters
+    ----------
+    v : 
+        Initial variable.
+    minv : float
+        Lower bound.
+    maxv : float
+        Upper bound.
+    Returns
+    -------
+    index : 
+        Transformed variable.
 
     References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.6
     """
