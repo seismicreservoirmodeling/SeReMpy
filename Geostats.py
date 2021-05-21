@@ -523,7 +523,7 @@ def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, k
         Coordinates of the measurements (nd, ndim).
     dvalues : array_like
         Values of the measurements (nd, 1).
-    xmean : float
+    xmean : float or array (for local variable mean)
         Prior mean.
     xvar : float
         Prior variance.
