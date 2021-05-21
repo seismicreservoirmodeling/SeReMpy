@@ -505,4 +505,61 @@ def WyllieModel(Phi, Vpmat, Vpfl):
     
     return Vp
 
+def BackusAverageIsotropic(Vp, Vs, Rho, window_depth, d_depth):
+    """
+    BACKUS AVERAGE
+    Isotropic Backus Average.
+    Written by Leandro P. de Figueiredo (May 2021)
+
+    Parameters
+    ----------
+    Vp : array_like
+        P-wave velocity (km/s or other).
+    Vs : array_like
+        S-wave velocity (km/s or other).
+    Rho : array_like
+        Density (km/s or other).   
+    window_depth : float
+        Size of the moving window (same unit of d_depth)
+    d_depth : float
+        Log sampling rate (depth unit - usually meter or feet)
+
+    Returns
+    -------
+    Vp : array_like
+        Smoothed P-wave velocity (km/s or other).
+    Vs : array_like
+        Smoothed S-wave velocity (km/s or other).
+    Rho : array_like
+        Smoothed sensity (km/s or other).   
+    """
+    window_length = round(window_depth/d_depth)
+
+    print(window_length)
+
+    # Moving windows/wights/filter:
+    weights = np.ones(( window_length ,))
+    weights = weights/weights.sum()
+
+    # Backus Isotropic parameters 
+    C = 1 / ( Rho * Vp * Vp )
+    D = 1 / ( Rho * Vs * Vs )
+    # To include border in logs to avoid border effects
+    borders = np.ones(( window_length ,))        
+    C = np.concatenate( (borders*C[0], C, borders*C[-1]), axis=0 )
+    D = np.concatenate( (borders*D[0], D, borders*D[-1]), axis=0 )
+    Rho = np.concatenate( (borders*Rho[0], Rho, borders*Rho[-1]), axis=0 )
+    # Moving average:
+    C = 1/np.convolve(C,weights, 'same')    
+    C = C[window_length:len(C) - window_length]
+    D = 1/np.convolve(D,weights, 'same')    
+    D = D[window_length:len(D) - window_length]
+    Rho = np.convolve(Rho,weights, 'same')    
+    Rho = Rho[window_length:len(Rho) - window_length]
+
+    Vp = np.sqrt( C/Rho )
+    Vs = np.sqrt( D/Rho )
+
+    return Vp, Vs, Rho
+
 
