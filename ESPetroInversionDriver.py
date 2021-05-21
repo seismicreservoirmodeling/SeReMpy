@@ -4,6 +4,8 @@
 Created on Fri Nov 20 18:19:51 2020
 
 @author: dariograna
+
+Reference: Grana and de Figueiredo, 2021, SeReMpy
 """
 
 #% Ensemble Smoother Petrophysical Inversion Driver %%
@@ -62,9 +64,9 @@ wavelet, tw = RickerWavelet(freq, dt, ntw)
 # matrix associated to the linear rock physics operator
 R = np.zeros((nd, nv + 1))
 X = np.hstack([Phi,Clay,Sw, np.ones(Phi.shape)])
-R[0, :] = (np.linalg.lstsq(X,Vp)[0]).T
-R[1, :] = (np.linalg.lstsq(X,Vs)[0]).T
-R[2, :] = (np.linalg.lstsq(X,Rho)[0]).T
+R[0, :] = (np.linalg.lstsq(X,Vp,rcond=None)[0]).T
+R[1, :] = (np.linalg.lstsq(X,Vs,rcond=None)[0]).T
+R[2, :] = (np.linalg.lstsq(X,Rho,rcond=None)[0]).T
 
 #% Plot seismic data
 plt.figure(1)
@@ -144,12 +146,15 @@ plt.grid()
 plt.ylim([max(Time), min(Time)])
 plt.xlabel('Clay volume')
 plt.subplot(133)
+plt.plot(Sw, Time, 'k')
+plt.plot(Swprior, Time, 'r')
 plt.plot(Swsim, Time, 'b')
 plt.plot(Sw, Time, 'k')
 plt.plot(Swprior, Time, 'r')
 plt.grid()
 plt.ylim([max(Time), min(Time)])
 plt.xlabel('Water saturation')
+plt.legend(['Reference model', 'Prior mean','Prior Realizations'],loc ="lower right")
 plt.show()
 
 
@@ -200,11 +205,14 @@ plt.grid()
 plt.ylim([max(Time), min(Time)])
 plt.xlabel('Clay volume')
 plt.subplot(133)
+plt.plot(Sw, Time, 'k')
+plt.plot(Swmean, Time, 'r')
 plt.plot(Swpost, Time, 'b')
 plt.plot(Sw, Time, 'k')
 plt.plot(Swmean, Time, 'r')
 plt.grid()
 plt.ylim([max(Time), min(Time)])
 plt.xlabel('Water saturation')
+plt.legend(['Reference model', 'Posterior mean','Posterior Realizations'],loc ="lower right")
 plt.show()
 

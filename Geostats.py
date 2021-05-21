@@ -3,14 +3,16 @@
 Created on Tue Nov 17 20:05:53 2020
 
 @author: dariograna
+
 """
+
 import numpy as np
 import numpy.matlib
 from numpy.linalg import matrix_power
 import scipy .spatial
 
 
-def CorrelatedSimulation(mprior, sigma0, sigmaspace):
+def CorrelatedSimulation(mprior, sigma0, sigmaspace):   
     """
     CORRELATED SIMULATION
     Generates 1D stochastic realizations of correlated
@@ -30,7 +32,10 @@ def CorrelatedSimulation(mprior, sigma0, sigmaspace):
     -------
     msim : array_like
         Stochastic realization (nsamples, nvariables).
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.6
     """
+
     # initial parameters
     nm = mprior.shape[1]
     ns = mprior.shape[0]
@@ -43,9 +48,8 @@ def CorrelatedSimulation(mprior, sigma0, sigmaspace):
     msim = np.zeros((ns, nm))
     for i in range(nm):
         msim[:,i] = mreal[i*ns:(i+1)*ns]
-
+    
     return msim
-
 
 def ExpCov(h, l):
     """
@@ -59,17 +63,19 @@ def ExpCov(h, l):
         Distance.
     l : float or array_like
         Correlation length (or range).
-
+        
     Returns
     -------
     C : array_like
         Covariance.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     C = np.exp(-3 * h / l)
-
+    
     return C
-
 
 def GauCov(h, l):
     """
@@ -88,12 +94,14 @@ def GauCov(h, l):
     -------
     C : array_like
         Covariance.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     C = np.exp(-3 * h ** 2 / l ** 2)
-
+    
     return C
-
 
 def SphCov(h, l):
     """
@@ -112,14 +120,16 @@ def SphCov(h, l):
     -------
     C : array_like
         Covariance.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     C = np.zeros(h.shape)
     #C(h <= l).lvalue = 1 - 3 / 2 * h(h <= l) / l + 1 / 2 * h(h <= l) ** 3 / l ** 3
     C[h <= l] = 1 - 3 / 2 * h[h <= l] / l + 1 / 2 * h[h <= l] ** 3 / l ** 3
 
     return C
-
 
 def GaussianSimulation(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype, krig):
     """
@@ -153,7 +163,10 @@ def GaussianSimulation(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype, krig)
     -------
     sgsim : array_like
         Realization (nsamples, nvariables).
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.5
     """
+
     if krig == 0:
         krigmean, krigvar = SimpleKriging(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype)
     else:
@@ -161,9 +174,8 @@ def GaussianSimulation(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype, krig)
 
     # realization
     sgsim = krigmean + np.sqrt(krigvar) * np.random.randn(1)
-
+    
     return sgsim
-
 
 def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
     """
@@ -198,7 +210,10 @@ def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
         Indicator kriging probability.
     ikmap : array_like
         Maximum a posteriori of indicator kriging probability.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 4.1
     """
+
     # If l and krigtype are single parameters, use it for all facies
     if type(l)==float:
         l = np.tile(l, (nf, 1))
@@ -213,7 +228,7 @@ def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
 
     # kriging weights
     xdtemp = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(np.vstack((xcoord, dcoords))))
-
+   
     distvect = xdtemp[1:,0]
     distmatr = xdtemp[1:,1:]
     varprior = np.zeros((1,nf))
@@ -224,20 +239,20 @@ def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
         varprior[:,j]= pprior[j] * (1 - pprior[j])
         krigvect[:,j]= varprior[:,j] * SpatialCovariance1D(distvect, l[j], krigtype[j])
         krigmatr[:,:,j] = varprior[:,j] * SpatialCovariance1D(distmatr, l[j], krigtype[j])
-        wkrig[:,j] = np.linalg.lstsq(krigmatr[:,:,j], krigvect[:,j])[0]
+        wkrig[:,j] = np.linalg.lstsq(krigmatr[:,:,j], krigvect[:,j],rcond=None)[0]
+        
 
     # indicator kriging probability
     ikp = np.zeros((1, nf))
     for j in range(nf):
         ikp[0,j] = pprior[j] + sum(wkrig[:,j] * (indvar[:,j]- pprior[j]))
 
-    # Should we only normalize ikp, do we have to truncate?
+    # Should we only normalize ikp, do we have to truncate?        
     #ikp[ikp<0] = 0;ikp[ikp>1] = 1
     ikp = ikp/ikp.sum()
     ikmap = np.argmax(ikp, axis=1)
-
+    
     return ikp, ikmap
-
 
 def OrdinaryKriging(xcoord, dcoords, dvalues, xvar, l, krigtype):
     """
@@ -266,7 +281,10 @@ def OrdinaryKriging(xcoord, dcoords, dvalues, xvar, l, krigtype):
         Kriging estimate.
     xvarok : array_like
         Kriging variance.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.4
     """
+
     # kriging matrix and vector
     nd = dcoords.shape[0]
     krigmatr = np.ones((nd + 1, nd + 1))
@@ -281,16 +299,15 @@ def OrdinaryKriging(xcoord, dcoords, dvalues, xvar, l, krigtype):
     krigmatr = krigmatr + 0.000001*xvar*np.eye(krigmatr.shape[0])
 
     # kriging weights
-    wkrig = np.linalg.lstsq(krigmatr, krigvect)[0]
+    wkrig = np.linalg.lstsq(krigmatr, krigvect,rcond=None)[0]
 
     # kriging mean
     # xok = mean(dvalues)+sum(wkrig(1:end-1).*(dvalues-mean(dvalues)));
     xok = np.sum(wkrig[0:- 1] * dvalues)
     # kriging variance
     xvarok = xvar - np.sum(wkrig * krigvect)
-
+    
     return xok, xvarok
-
 
 def SimpleKriging(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype):
     """
@@ -321,7 +338,10 @@ def SimpleKriging(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype):
         Kriging estimate.
     xvarsk : array_like
         Kriging variance.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.4
     """
+
     # kriging matrix and vector
     nd = dcoords.shape[0]
     krigmatr = np.ones((nd, nd))
@@ -335,16 +355,15 @@ def SimpleKriging(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype):
     krigmatr = krigmatr + 0.000001*xvar*np.eye(krigmatr.shape[0])
 
     # kriging weights
-    wkrig = np.linalg.lstsq(krigmatr, krigvect)[0]
+    wkrig = np.linalg.lstsq(krigmatr, krigvect,rcond=None)[0]
 
     # kriging mean
     xsk = xmean + np.sum(wkrig * (dvalues - xmean))
     # kriging variance
     xvarsk = xvar - np.sum(wkrig * krigvect)
-
+    
     return xsk, xvarsk
-
-
+    
 def MarkovChainSimulation(T, ns, nsim):
     """
     MARKOV CHAIN SIMULATION
@@ -365,7 +384,10 @@ def MarkovChainSimulation(T, ns, nsim):
     -------
     fsim : array_like
         Realizations (ns, nsim).
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 4.4
     """
+
     fsim = np.zeros((ns, nsim))
     fsim = fsim.astype(int)
     Tpow = matrix_power(T, 100)
@@ -377,9 +399,8 @@ def MarkovChainSimulation(T, ns, nsim):
             fcond = np.zeros((1,T.shape[1]))
             fcond[0,:] = T[fsim[i-1,j], :]
             fsim[i, j] = RandDisc(fcond)
-
+    
     return fsim
-
 
 def RadialCorrLength(lmin, lmax, azim, theta):
     """
@@ -402,12 +423,14 @@ def RadialCorrLength(lmin, lmax, azim, theta):
     -------
     l : float
         Radial correlation length.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     l = np.sqrt((lmin ** 2 * lmax ** 2) / (lmax ** 2 * (np.sin(azim - theta)) ** 2 + lmin ** 2 * (np.cos(azim - theta)) ** 2))
-
+                                              
     return l
-
 
 def SpatialCovariance1D(h, l, krigtype):
     """
@@ -428,20 +451,22 @@ def SpatialCovariance1D(h, l, krigtype):
     -------
     C : array_like
         Covariance.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     if krigtype == 'exp':
         C = ExpCov(h, l)
     elif krigtype == 'gau':
         C = GauCov(h, l)
     elif krigtype == 'sph':
-        C = SphCov(h, l)
+        C = SphCov(h, l)  
     else:
-        print('error')
-
+        print('error')   
+        
     return C
-
-
+    
 def SpatialCovariance2D(lmin, lmax, azim, theta, h, krigtype):
     """
     SPATIAL COVARIANCE 2D
@@ -467,7 +492,10 @@ def SpatialCovariance2D(lmin, lmax, azim, theta, h, krigtype):
     -------
     C : array_like
         Covariance.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     if krigtype == 'exp':
         C = ExpCov(h, RadialCorrLength(lmin, lmax, azim, theta))
@@ -476,10 +504,9 @@ def SpatialCovariance2D(lmin, lmax, azim, theta, h, krigtype):
     elif krigtype == 'sph':
         C = SphCov(h, RadialCorrLength(lmin, lmax, azim, theta))
     else:
-        print('error')
-
-    return C
-
+        print('error')    
+        
+    return C    
 
 def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, krig):
     """
@@ -496,7 +523,7 @@ def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, k
         Coordinates of the measurements (nd, ndim).
     dvalues : array_like
         Values of the measurements (nd, 1).
-    xmean : float
+    xmean : float or array (for local variable mean)
         Prior mean.
     xvar : float
         Prior variance.
@@ -511,7 +538,10 @@ def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, k
     -------
     sgsim : array_like
         Realization.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.5
     """
+
     # initial parameters
     n = xcoords.shape[0]
     nd = dcoords.shape[0]
@@ -534,7 +564,7 @@ def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, k
 
     # if the xmean is a single value, transform to an array
     if type(xmean) == float:
-        xmean = xmean*np.ones((n, 1))
+        xmean = xmean*np.ones((n, 1))    
 
     # sequential simulation
     for i in range(npl):
@@ -551,22 +581,20 @@ def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, k
 
         # kriging
         if krig == 0:
-            krigmean, krigvar = SimpleKriging(pathcoords[i,:], dc, dz, xmean[pathind[i]], xvar, l, krigtype)
+            krigmean, krigvar = SimpleKriging(pathcoords[i,:], dc, dz, xmean[pathind[i]], xvar, l, krigtype)            
         else:
             krigmean, krigvar = OrdinaryKriging(pathcoords[i,:], dc, dz, xvar, l, krigtype)
-
+  
         # realization
         simval[pathind[i],0] = krigmean + np.sqrt(krigvar) * np.random.randn(1)
-
         # Adding simulated value the vector of conditioning data
         dcoords = np.vstack((dcoords, pathcoords[i, :]))
         dvalues = np.vstack((dvalues, simval[pathind[i]]))
 
     # Assigning the sampled values to the simulation grid
     sgsim[sgsim[:,0] == -999, 0] = simval[:,0]     
-
+    
     return sgsim
-
 
 def SeqIndicatorSimulation(xcoords, dcoords, dvalues, nf, pprior, l, krigtype):
     """
@@ -598,7 +626,10 @@ def SeqIndicatorSimulation(xcoords, dcoords, dvalues, nf, pprior, l, krigtype):
     -------
     sgsim : array_like
         Realization.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 4.2
     """
+
     # initial parameters
     n = xcoords.shape[0]
     nd = dcoords.shape[0]
@@ -611,6 +642,7 @@ def SeqIndicatorSimulation(xcoords, dcoords, dvalues, nf, pprior, l, krigtype):
     for i in range(nd):
         ind = np.argmin(np.sum((xcoords - dcoords[i, :]) ** 2, axis=1))
         sgsim[ind] = dvalues[i]
+
 
     # random path of locations
     npl = n - nd
@@ -632,20 +664,19 @@ def SeqIndicatorSimulation(xcoords, dcoords, dvalues, nf, pprior, l, krigtype):
             dc = dcoords[ind[0:nmax-1],:]
             dz = dvalues[ind[0:nmax-1]]
             dz = dz.astype(int)
+            
         ikprob, ikmap = IndicatorKriging(pathcoords[i,:], dc, dz, nf, pprior, l, krigtype)
 
-        # realization
+        # realization        
         simval[pathind[i]] = RandDisc(ikprob)
-
         # Adding simulated value the vector of conditioning data
         dcoords = np.vstack((dcoords, pathcoords[i, :]))
         dvalues = np.vstack((dvalues, simval[pathind[i]]))
 
     # Assigning the sampled values to the simulation grid
     sgsim[sgsim[:,0] == -999, 0] = simval[:,0]     
-
+    
     return sgsim
-
 
 def RandDisc(p):
     """
@@ -657,11 +688,13 @@ def RandDisc(p):
     ----------
     p : array_like
         Probabilities.
-
+        
     Returns
     -------
     index : array_like
         Sampled value.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 4.4
     """
     u = np.random.rand(1)
     index = 0
@@ -669,5 +702,8 @@ def RandDisc(p):
     while ((u > s) and (index < p.shape[1])):
         index = index + 1
         s = s + p[0,index]
-
+    
     return index
+
+                                 
+   

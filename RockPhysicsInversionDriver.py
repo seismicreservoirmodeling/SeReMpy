@@ -4,6 +4,8 @@
 Created on Fri Nov 20 07:24:51 2020
 
 @author: dariograna
+
+Reference: Grana and de Figueiredo, 2021, SeReMpy
 """
 
 #% Rock physics inversion Driver %%
@@ -69,9 +71,9 @@ ns = dcond.shape[0]
 # matrix associated to the linear rock physics operator
 R = np.zeros((nd, nv + 1))
 X = np.hstack([mtrain, np.ones(Phi.shape)])
-R[0, :] = (np.linalg.lstsq(X,Vprpm)[0]).T
-R[1, :] = (np.linalg.lstsq(X,Vsrpm)[0]).T
-R[2, :] = (np.linalg.lstsq(X,Rhorpm)[0]).T
+R[0, :] = (np.linalg.lstsq(X,Vprpm,rcond=None)[0]).T
+R[1, :] = (np.linalg.lstsq(X,Vsrpm,rcond=None)[0]).T
+R[2, :] = (np.linalg.lstsq(X,Rhorpm,rcond=None)[0]).T
 
 # Error
 sigmaerr = 10 ** -2 * np.eye(nd)
@@ -141,6 +143,7 @@ plt.ylabel('Depth (m)')
 plt.xlabel('Water saturation')
 plt.xlim([0, 1])
 plt.ylim([max(Depth), min(Depth)])
+plt.suptitle('Rock physics linear inversion')
 plt.show()
 
 
@@ -206,6 +209,7 @@ plt.ylabel('Depth (m)')
 plt.xlabel('Water saturation')
 plt.xlim([0, 1])
 plt.ylim([max(Depth), min(Depth)])
+plt.suptitle('Rock physics linear inversion - Gaussian Mix prior')
 plt.show()
 
 
@@ -265,6 +269,7 @@ plt.ylabel('Depth (m)')
 plt.xlabel('Water saturation')
 plt.xlim([0, 1])
 plt.ylim([max(Depth), min(Depth)])
+plt.suptitle('Rock physics inversion - Gaussian Mix joint distribution')
 plt.show()
 
 

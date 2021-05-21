@@ -4,6 +4,7 @@
 Created on Thu Nov 19 15:30:38 2020
 
 @author: dariograna
+
 """
 import numpy as np
 from scipy.linalg import toeplitz
@@ -33,7 +34,10 @@ def AkiRichardsCoefficientsMatrix(Vp, Vs, theta, nv):
     -------
     A : array_like
         Aki Richards coefficients matrix.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
+
     # initial parameters
     nsamples = Vp.shape[0]
     ntheta = len(theta)
@@ -52,10 +56,9 @@ def AkiRichardsCoefficientsMatrix(Vp, Vs, theta, nv):
         Acs = np.diag(cs)
         Acr = np.diag(cr)
         A[ i*(nsamples-1) : (i+1)*(nsamples-1), : ] = np.hstack([Acp, Acs, Acr])
-
+   
     return A
-
-
+    
 def DifferentialMatrix(nt, nv):
     """
     DIFFERENTIAL MATRIX
@@ -73,7 +76,10 @@ def DifferentialMatrix(nt, nv):
     -------
     D : array_like 
         Differential matrix.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
+
     I = np.eye(nt)
     B = np.zeros((nt, nt))
     B[1:, 0:- 1] = -np.eye(nt-1)
@@ -82,10 +88,9 @@ def DifferentialMatrix(nt, nv):
     D = np.zeros(((nt-1)*nv, nt*nv))
     for i in range(nv):
         D[ i*(nt-1):(i+1)*(nt-1),i*nt:(i+1)*nt] = J
-
+        
     return D
-
-
+    
 def RickerWavelet(freq, dt, ntw):
     """
     RICKER WAVELET
@@ -107,16 +112,17 @@ def RickerWavelet(freq, dt, ntw):
         Wavelet.
     tw : array_like
         Two-way-time vector.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
+
     tmin = -dt * np.round(ntw / 2)
     tw = tmin + dt * np.arange(0, ntw)
     w = (1 - 2. * (np.pi ** 2 * freq ** 2) * tw ** 2) * np.exp(-(np.pi ** 2 * freq ** 2) * tw ** 2)
-
+    
     return w, tw 
 
-
-def SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior,
-                     sigmaprior, sigmaerr, wavelet, theta, nv):
+def SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior, sigmaprior, sigmaerr, wavelet, theta, nv):
     """
     SEISMIC INVERSION
     Computes the posterior distribution of elastic properties according to
@@ -154,7 +160,11 @@ def SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior,
         P97.5 of posterior distribution (nv*(nsamples+1), 1).
     Time : array_like
         time vector of elastic properties (nsamples+1, 1).
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.2
+    Grana and De Figueiredo, 2021, SeReMpy - Equations 5 and 6
     """
+
     # parameters
     ntheta = len(theta)
 
@@ -165,6 +175,7 @@ def SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior,
     mprior = np.hstack([logVp, logVs, logRho])
     mprior = mprior.reshape(len(mprior),1)
     nm = logVp.shape[0]
+    
 
     # Aki Richards matrix
     A = AkiRichardsCoefficientsMatrix(Vpprior, Vsprior, theta, nv)
@@ -185,9 +196,9 @@ def SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior,
     sigmadobs = multi_dot([G, sigmaprior, G.T]) + sigmaerr
 
     # posterior mean
-    mpost = mprior + np.dot((np.dot(G, sigmaprior)).T , np.linalg.lstsq(sigmadobs, Seis - mdobs)[0])
+    mpost = mprior + np.dot((np.dot(G, sigmaprior)).T , np.linalg.lstsq(sigmadobs, Seis - mdobs,rcond=None)[0])
     # posterior covariance matrix
-    sigmapost = sigmaprior - np.dot((np.dot(G, sigmaprior)).T , np.linalg.lstsq(sigmadobs, np.dot(G,sigmaprior))[0])
+    sigmapost = sigmaprior - np.dot((np.dot(G, sigmaprior)).T , np.linalg.lstsq(sigmadobs, np.dot(G,sigmaprior),rcond=None)[0])
 
     # statistical estimators posterior distribution
     varpost = np.diag(sigmapost).reshape(sigmapost.shape[0],1)
@@ -198,10 +209,9 @@ def SeismicInversion(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior,
     # time
     dt = TimeSeis[1] - TimeSeis[0]
     Time = np.arange(TimeSeis[1] - dt / 2, TimeSeis[-1] + dt / 2 + dt, dt)
-
+    
     return mmap, mlp, mup, Time
-
-
+    
 def SeismicModel(Vp, Vs, Rho, Time, theta, wavelet):
     """
     SEISMIC MODEL
@@ -229,7 +239,10 @@ def SeismicModel(Vp, Vs, Rho, Time, theta, wavelet):
         Vector of seismic data (nsamples x nangles, 1).
     Time : array_like
         Seismic times (nsamples, 1).
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
+
     # initial parameters
     ntheta = len(theta)
     nm = Vp.shape[0]
@@ -262,11 +275,10 @@ def SeismicModel(Vp, Vs, Rho, Time, theta, wavelet):
 
     # Time seismic measurements
     TimeSeis = 1 / 2 * (Time[0:- 1] + Time[1:])
-
+    
     return Seis, TimeSeis
-
-
-def WaveletMatrix(wavelet, ns, ntheta):
+    
+def WaveletMatrix(wavelet, nsamples, ntheta):
     """
     WAVELET MATRIX
     Computes the wavelet matrix for discrete convolution.
@@ -285,21 +297,23 @@ def WaveletMatrix(wavelet, ns, ntheta):
     -------
     W : array_like
         Wavelet matrix.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
 
-    W = np.zeros((ntheta*(ns-1), ntheta*(ns-1)))
+    W = np.zeros((ntheta*(nsamples-1), ntheta*(nsamples-1)))
     indmaxwav = np.argmax(wavelet)
-
+    
     for i in range(ntheta):
-        wsub = convmtx(wavelet, (ns - 1))
+        wsub = convmtx(wavelet, (nsamples - 1))
         wsub = wsub.T
-        W[ i*(ns-1):(i+1)*(ns-1), i*(ns-1):(i+1)*(ns-1)] = wsub[indmaxwav:indmaxwav+(ns-1),:]
-
+        W[ i*(nsamples-1):(i+1)*(nsamples-1), i*(nsamples-1):(i+1)*(nsamples-1)] = wsub[indmaxwav:indmaxwav+(nsamples-1),:]
+    
     return W
-
+    
 
 def convmtx(w, ns):
-    """
+    """    
     CONVMTX
     Computes the Toeplitz matrix for discrete convolution.
     Written by Dario Grana (August 2020)
@@ -315,7 +329,10 @@ def convmtx(w, ns):
     -------
     C : array_like
         Toeplitz matrix.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.1
     """
+
     if len(w) < ns:
         a = np.r_[w[0], np.zeros(ns-1)]
         b = np.r_[w, np.zeros(ns-1)]
@@ -323,8 +340,8 @@ def convmtx(w, ns):
         b = np.r_[w[0], np.zeros(ns - 1)]
         a = np.r_[w, np.zeros(ns - 1)]
     C = toeplitz(a, b)
-    return C
 
+    return C  
 
 def RockPhysicsGaussInversion(mtrain, dtrain, mdomain, dcond, sigmaerr):
     """
@@ -357,7 +374,10 @@ def RockPhysicsGaussInversion(mtrain, dtrain, mdomain, dcond, sigmaerr):
         Posterior covariance matrix (nv, nv).
     Ppost : array_like
         Joint posterior distribution.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.4
     """
+
     # initial parameters
     nv = mtrain.shape[1]
     ns = dcond.shape[0]
@@ -392,8 +412,7 @@ def RockPhysicsGaussInversion(mtrain, dtrain, mdomain, dcond, sigmaerr):
         Ppost[i,:,:,:] = multivariate_normal.pdf(mdomain, mupost[i,:], sigmapost)
 
     return mupost, sigmapost, Ppost
-
-
+    
 def RockPhysicsGaussMixInversion(ftrain, mtrain, dtrain, mdomain, dcond, sigmaerr):
     """
     ROCK PHYSICS GAUSS MIX INVERSION
@@ -429,7 +448,10 @@ def RockPhysicsGaussMixInversion(ftrain, mtrain, dtrain, mdomain, dcond, sigmaer
         Posterior weights (facies proportions) (nsamples, 1).
     Ppost : array_like
         Joint posterior distribution.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.4
     """
+
     # initial parameters
     nv = mtrain.shape[1]
     nd = dtrain.shape[1]
@@ -489,10 +511,9 @@ def RockPhysicsGaussMixInversion(ftrain, mtrain, dtrain, mdomain, dcond, sigmaer
             lh = lh + pfpost[i,k] * multivariate_normal.pdf(mdomain, mupost[i,:,k], sigmapost[:,:,k])
         # posterior PDF
         Ppost[i,:,:,:] = lh / sum(lh.ravel())
-
+    
     return mupost, sigmapost, pfpost, Ppost
-
-
+    
 def RockPhysicsLinGaussInversion(mum, sm, G, mdomain, dcond, sigmaerr):
     """
     ROCK PHYSICS LINEAR GAUSSIAN INVERSION
@@ -525,11 +546,14 @@ def RockPhysicsLinGaussInversion(mum, sm, G, mdomain, dcond, sigmaerr):
         Posterior covariance matrix (nv, nv).
     Ppost : array_like
         Joint posterior distribution.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.4
     """
+
     # initial parameters
     nv = mum.shape[1]
     ns = dcond.shape[0]
-
+    
     # analytical calculations
     mud = np.dot(G, mum.T)
     sd = multi_dot([G, sm, G.T])
@@ -550,8 +574,7 @@ def RockPhysicsLinGaussInversion(mum, sm, G, mdomain, dcond, sigmaerr):
         Ppost[i,:,:,:] = multivariate_normal.pdf(mdomain, mupost[i,:], sigmapost)
 
     return mupost, sigmapost, Ppost
-
-
+    
 def RockPhysicsLinGaussMixInversion(pf, mum, sm, G, mdomain, dcond, sigmaerr):
     """
     ROCK PHYSICS LINEAR GAUSS MIX INVERSION
@@ -588,7 +611,10 @@ def RockPhysicsLinGaussMixInversion(pf, mum, sm, G, mdomain, dcond, sigmaerr):
         Posterior weights (nsamples, nf).
     Ppost : array_like
         Joint posterior distribution.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.4
     """
+
     # initial parameters
     nv = mum.shape[1]
     nf = mum.shape[0]
@@ -630,7 +656,7 @@ def RockPhysicsLinGaussMixInversion(pf, mum, sm, G, mdomain, dcond, sigmaerr):
             lh = lh + pfpost[i,k] * multivariate_normal.pdf(mdomain, mupost[i,:,k], sigmapost[:,:,k])
         # posterior PDF
         Ppost[i,:,:,:] = lh / sum(lh.ravel())
-
+    
     return mupost, sigmapost, pfpost, Ppost
 
 
@@ -645,7 +671,6 @@ def RockPhysicsKDEInversion(mtrain, dtrain, jointdimain, datadomain, dcond, join
 
     Parameters
     ----------
-
     mtrain : array_like
         Training dataset of petrophysical properties (ntrain, nm).
     dtrain : array_like
@@ -665,27 +690,32 @@ def RockPhysicsKDEInversion(mtrain, dtrain, jointdimain, datadomain, dcond, join
     -------
     Ppost : array_like
         Posterior distribution.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.4
     """
+
     ## Inefficient implementation in Python -- refer to MATLAB code ##
 
     # number of training datapoint
     nd = dtrain.shape[1]
     ns = dcond.shape[0]
     datatrain = np.hstack([mtrain, dtrain])
+    
     kernel = stats.gaussian_kde(datatrain.T)
+    
     Pjoint = np.reshape(kernel(jointdimain).T, jointdim)
+    
     Ppost = np.zeros((ns, *mdim))
-
     for i in range(ns):
-        ind = np.zeros((nd,1))
+        ind = np.zeros((nd,1))      
         for k in range(nd):
             ind[k] = np.argmin(((dcond[i,k] - datadomain[k,:]))**2)
         ind = ind.astype(int)
         Ppost[i,:,:,:] = np.squeeze(Pjoint[:,:,:,ind[0],ind[1],ind[2]]) / sum(Pjoint[:,:,:,ind[0],ind[1],ind[2]].ravel())  
-
+    
     return Ppost
-
-
+    
+    
 def EnsembleSmootherMDA(PriorModels, SeisData, SeisPred, alpha, sigmaerr):
     """
     ENSEMBLE SMOOTHER MDA
@@ -712,30 +742,27 @@ def EnsembleSmootherMDA(PriorModels, SeisData, SeisPred, alpha, sigmaerr):
         Updated models realizations (nm, ne).
     KalmanGain : array_like
         Kalman Gain Matrix.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.6
     """
+
     # initial parameters
     nd, ne = SeisPred.shape
-
     # data perturbation
     SeisPert = np.matlib.repmat(SeisData, 1, ne) + np.dot(np.sqrt(alpha * sigmaerr), np.random.randn(nd, ne))
-
     # mean models
     mum = np.mean(PriorModels, axis=1)
     mud = np.mean(SeisPred, axis=1)
-
     # covariance matrices
     smd = 1 / (ne - 1) * np.dot((PriorModels - mum.reshape(len(mum),1)),(SeisPred - mud.reshape(len(mud),1)).T)
     sdd = 1 / (ne - 1) * np.dot((SeisPred - mud.reshape(len(mud),1)), (SeisPred - mud.reshape(len(mud),1)).T)
-
     # Kalman Gain
     KalmanGain = np.dot(smd,  np.linalg.pinv(sdd + alpha * sigmaerr))
-
     # Updated models
     PostModels = PriorModels + np.dot(KalmanGain, (SeisPert - SeisPred))
-
+    
     return PostModels, KalmanGain
-
-
+    
 def InvLogitBounded(w, minv, maxv):
     """
     INVERSE LOGIT BOUNDED
@@ -755,19 +782,20 @@ def InvLogitBounded(w, minv, maxv):
     -------
     index : 
         Transformed variable.
+
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.6
     """
+
     # tranformation
     v = (np.exp(w) * maxv + minv) / (np.exp(w) + 1)
-
+    
     return v
-
 
 def LogitBounded(v, minv, maxv):
     """
     LOGIT BOUNDED
     Computes the logit tranformation for bounded variables.
     Written by Dario Grana (August 2020)
-
     Parameters
     ----------
     v : 
@@ -776,13 +804,15 @@ def LogitBounded(v, minv, maxv):
         Lower bound.
     maxv : float
         Upper bound.
-
     Returns
     -------
     index : 
         Transformed variable.
-    """
-    # Written by Dario Grana (August 2020)
-    w = np.log((v - minv) / (maxv - v))
 
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 5.6
+    """
+
+    w = np.log((v - minv) / (maxv - v))
+    
     return w
+    
