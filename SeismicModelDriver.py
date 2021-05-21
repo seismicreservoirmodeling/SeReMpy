@@ -3,7 +3,6 @@
 """
 Created on Thu Nov 19 16:36:59 2020
 
-@author: dariograna
 """
 
 #% Seismic Model Driver %%

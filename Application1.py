@@ -3,7 +3,6 @@
 """
 Created on Fri Jan 15 09:08:52 2021
 
-@author: dariograna
 """
 
 from scipy.io import loadmat
@@ -11,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from RockPhysics import *
 from Facies import *
+
 
 #% Application1
 # data

@@ -3,7 +3,6 @@
 """
 Created on Wed Nov 18 13:25:49 2020
 
-@author: dariograna
 """
 
 #% Geostatistics Continuous Driver %%

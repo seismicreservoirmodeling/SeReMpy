@@ -3,7 +3,6 @@
 """
 Created on Fri Jan 15 09:09:34 2021
 
-@author: dariograna
 """
 
 from scipy.io import loadmat

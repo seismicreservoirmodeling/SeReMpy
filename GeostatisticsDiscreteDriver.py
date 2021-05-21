@@ -3,7 +3,6 @@
 """
 Created on Wed Nov 18 18:02:21 2020
 
-@author: dariograna
 """
 
 #% Geostatistics Discrete Driver %%
@@ -128,14 +127,14 @@ plt.xlabel('X')
 plt.ylabel('Y')
 cbar = plt.colorbar()
 cbar.set_label('Probability valleys', rotation=270)
-plt.title('Indicator Kriging Probability')
+plt.title('Indicator Kriging Probability of facies 0')
 plt.subplot(222)
 plt.pcolor(X,Y, ikmap)
 plt.xlabel('X')
 plt.ylabel('Y')
 cbar = plt.colorbar()
 cbar.set_label('Peaks Valleys', rotation=270)
-plt.title('Indicator Kriging Probability')
+plt.title('Indicator Kriging most likely facies')
 plt.subplot(223)
 plt.pcolor(X,Y, sisim[:,:,0])
 plt.xlabel('X')

@@ -2,35 +2,28 @@
 """
 Created on Tue Nov 17 20:05:53 2020
 
-@author: dariograna
 """
+
 import numpy as np
 import numpy.matlib
 from numpy.linalg import matrix_power
 import scipy .spatial
 
 
-def CorrelatedSimulation(mprior, sigma0, sigmaspace):
+def CorrelatedSimulation(mprior, sigma0, sigmaspace):   
     """
-    CORRELATED SIMULATION
-    Generates 1D stochastic realizations of correlated
-    multiple random variables with a spatial correlation model.
-    Written by Dario Grana (August 2020)
-
+    CORRELATED SIMULATION generates 1D stochastic realizations of correlated
+    multiple random variables with a spatial correlation model
     Parameters
-    ----------
-    mprior : array_like
-        Prior trend (nsamples, nvariables).
-    sigma0 : array_like
-        Stationary covariance matrix (nvariables, nvariables).
-    sigmaspace : array_like
-        Spatial covariance matrix (nsamples, nsamples).
+         mprior = prior trend (nsamples, nvariables)
+          sigma0 = stationary covariance matrix (nvariables, nvariables)
+          sigmaspace =spatial covariance matrix (nsamples, nsamples)
+    Returns:
+           msim = stochastic realization (nsamples, nvariables)
 
-    Returns
-    -------
-    msim : array_like
-        Stochastic realization (nsamples, nvariables).
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.6
     """
+
     # initial parameters
     nm = mprior.shape[1]
     ns = mprior.shape[0]
@@ -43,76 +36,55 @@ def CorrelatedSimulation(mprior, sigma0, sigmaspace):
     msim = np.zeros((ns, nm))
     for i in range(nm):
         msim[:,i] = mreal[i*ns:(i+1)*ns]
-
+    
     return msim
-
 
 def ExpCov(h, l):
     """
-    EXP COV
-    Computes the exponential covariance function.
-    Written by Dario Grana (August 2020)
+    EXP COV computes the exponential covariance function
+    Parameters:
+          h = distance
+          l = correlation length (or range)
+    Returns:
+           C = covariance
 
-    Parameters
-    ----------
-    h : float or array_like
-        Distance.
-    l : float or array_like
-        Correlation length (or range).
-
-    Returns
-    -------
-    C : array_like
-        Covariance.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     C = np.exp(-3 * h / l)
-
+    
     return C
-
 
 def GauCov(h, l):
     """
-    GAU COV
-    Computes the Gaussian covariance function.
-    Written by Dario Grana (August 2020)
+    GAU COV computes the Gaussian covariance function
+    Parameters:
+          h = distance
+          l = correlation length (or range)
+    Returns:
+           C = covariance
 
-    Parameters
-    ----------
-    h : float or array_like
-        Distance.
-    l : float or array_like
-        Correlation length (or range).
-
-    Returns
-    -------
-    C : array_like
-        Covariance.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     C = np.exp(-3 * h ** 2 / l ** 2)
-
+    
     return C
-
 
 def SphCov(h, l):
     """
-    SPH COV
-    Computes the spherical covariance function.
-    Written by Dario Grana (August 2020)
+    SPH COV computes the spherical covariance function
+    Parameters:
+          h = distance
+          l = correlation length (or range)
+    Returns:
+           C = covariance
 
-    Parameters
-    ----------
-    h : float or array_like
-        Distance.
-    l : float or array_like
-        Correlation length (or range).
-
-    Returns
-    -------
-    C : array_like
-        Covariance.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     C = np.zeros(h.shape)
     #C(h <= l).lvalue = 1 - 3 / 2 * h(h <= l) / l + 1 / 2 * h(h <= l) ** 3 / l ** 3
@@ -120,40 +92,26 @@ def SphCov(h, l):
 
     return C
 
-
 def GaussianSimulation(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype, krig):
     """
-    GAUSSIAN SIMULATION
-    Generates a realization of the random variable conditioned on
-    the available measurements.
-    Written by Dario Grana (August 2020)
+    GAUSSIAN SIMULATION  generates a realization of the random variable 
+    conditioned on the available measurements
+    Parameters:
+          xcoord = coordinates of the location for the estimation (1, ndim)
+          dcoords = coordinates of the measurements (ns, ndim)
+          dvalues = values of the measurements (ns, 1)
+          xmean = prior mean
+          xvar = prior variance
+          h = distance
+          l = correlation length
+          type = function ype ('exp', 'gau', 'sph')
+          krig = kriging type (0=simple, 1=ordinary)
+    Returns:
+           sgsim = realization
 
-    Parameters
-    ----------
-    xcoord : array_like
-        Coordinates of the location for the estimation (1, ndim).
-    dcoords : array_like
-        Coordinates of the measurements (ns, ndim).
-    dvalues : array_like
-        Values of the measurements (ns, 1).
-    xmean : float
-        Prior mean.
-    xvar : float
-        Prior variance.
-    h : float
-        Distance.
-    l : float
-        Correlation length.
-    krigtype : str
-        Function type ('exp', 'gau', 'sph').
-    krig : int
-        Kriging type (0=simple, 1=ordinary).
-
-    Returns
-    -------
-    sgsim : array_like
-        Realization (nsamples, nvariables).
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.5
     """
+
     if krig == 0:
         krigmean, krigvar = SimpleKriging(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype)
     else:
@@ -161,44 +119,28 @@ def GaussianSimulation(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype, krig)
 
     # realization
     sgsim = krigmean + np.sqrt(krigvar) * np.random.randn(1)
-
+    
     return sgsim
-
 
 def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
     """
-    INDICATOR KRIGING
-    Computes the indicator kriging estimate and variance.
-    Written by Dario Grana (August 2020)
+    INDICATOR KRIGING computes the indicator kriging estimate and variance 
+    Parameters:
+          xcoord = coordinates of the location for the estimation (1, ndim)
+          dcoords = coordinates of the measurements (ns, ndim)
+          dvalues = values of the measurements (ns, 1)
+          nf = number of possible outcomes (e.g. number of facies)
+          pprior = prior probability (1,nf)
+          h = distance 
+          l = correlation range, for different range for each facies, l is an array with nf components
+          type = function type ('exp', 'gau', 'sph') for different type for each facies, type is an array wuth nf components
+    Returns:
+           ikp = indicator kriging probability
+           ikmap = maximum a posteriori of indicator kriging probability
 
-    Parameters
-    ----------
-    xcoord : array_like
-        Coordinates of the location for the estimation (1, ndim).
-    dcoords : array_like
-        Coordinates of the measurements (ns, ndim).
-    dvalues : array_like
-        Values of the measurements (ns, 1).
-    nf : int
-        Number of possible outcomes (e.g. number of facies).
-    pprior : array_like
-        Prior probability (1, nf).
-    h : float or array_like
-        Distance.
-    l : float or array_like
-        Correlation range, for different range for each facies
-        (array with nf components).
-    krigtype : str
-        Function type ('exp', 'gau', 'sph') for different type for each facies,
-        (array with nf components).
-
-    Returns
-    -------
-    ikp : array_like
-        Indicator kriging probability.
-    ikmap : array_like
-        Maximum a posteriori of indicator kriging probability.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 4.1
     """
+
     # If l and krigtype are single parameters, use it for all facies
     if type(l)==float:
         l = np.tile(l, (nf, 1))
@@ -213,7 +155,7 @@ def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
 
     # kriging weights
     xdtemp = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(np.vstack((xcoord, dcoords))))
-
+   
     distvect = xdtemp[1:,0]
     distmatr = xdtemp[1:,1:]
     varprior = np.zeros((1,nf))
@@ -224,49 +166,39 @@ def IndicatorKriging(xcoord, dcoords, dvalues, nf, pprior, l, krigtype):
         varprior[:,j]= pprior[j] * (1 - pprior[j])
         krigvect[:,j]= varprior[:,j] * SpatialCovariance1D(distvect, l[j], krigtype[j])
         krigmatr[:,:,j] = varprior[:,j] * SpatialCovariance1D(distmatr, l[j], krigtype[j])
-        wkrig[:,j] = np.linalg.lstsq(krigmatr[:,:,j], krigvect[:,j])[0]
+        wkrig[:,j] = np.linalg.lstsq(krigmatr[:,:,j], krigvect[:,j],rcond=None)[0]
+        
 
     # indicator kriging probability
     ikp = np.zeros((1, nf))
     for j in range(nf):
         ikp[0,j] = pprior[j] + sum(wkrig[:,j] * (indvar[:,j]- pprior[j]))
 
-    # Should we only normalize ikp, do we have to truncate?
+    # Should we only normalize ikp, do we have to truncate?        
     #ikp[ikp<0] = 0;ikp[ikp>1] = 1
     ikp = ikp/ikp.sum()
     ikmap = np.argmax(ikp, axis=1)
-
+    
     return ikp, ikmap
-
 
 def OrdinaryKriging(xcoord, dcoords, dvalues, xvar, l, krigtype):
     """
-    ORDINARY KRIGING
-    Computes the ordinary kriging estimate and variance.
-    Written by Dario Grana (August 2020)
+    ORDINARY KRIGING computes the ordinary kriging estimate and variance 
+    Parameters:
+          xcoord = coordinates of the location for the estimation (1, ndim)
+          dcoords = coordinates of the measurements (ns, ndim)
+          dvalues = values of the measurements (ns, 1)
+          xvar = prior variance
+          h = distance
+          l = correlation length
+          type = function ype ('exp', 'gau', 'sph')
+    Returns:
+           xok = kriging estimate
+           xvarok = kriging variance
 
-    Parameters
-    ----------
-    xcoord : array_like
-        Coordinates of the location for the estimation (1, ndim).
-    dcoords : array_like
-        Coordinates of the measurements (ns, ndim).
-    dvalues : array_like
-        Values of the measurements (ns, 1).
-    xvar : float
-        Prior variance.
-    l : float
-        Correlation length
-    krigtype : str
-        Function type ('exp', 'gau', 'sph').
-
-    Returns
-    -------
-    xok : array_like
-        Kriging estimate.
-    xvarok : array_like
-        Kriging variance.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.4
     """
+
     # kriging matrix and vector
     nd = dcoords.shape[0]
     krigmatr = np.ones((nd + 1, nd + 1))
@@ -281,47 +213,35 @@ def OrdinaryKriging(xcoord, dcoords, dvalues, xvar, l, krigtype):
     krigmatr = krigmatr + 0.000001*xvar*np.eye(krigmatr.shape[0])
 
     # kriging weights
-    wkrig = np.linalg.lstsq(krigmatr, krigvect)[0]
+    wkrig = np.linalg.lstsq(krigmatr, krigvect,rcond=None)[0]
 
     # kriging mean
     # xok = mean(dvalues)+sum(wkrig(1:end-1).*(dvalues-mean(dvalues)));
     xok = np.sum(wkrig[0:- 1] * dvalues)
     # kriging variance
     xvarok = xvar - np.sum(wkrig * krigvect)
-
+    
     return xok, xvarok
-
 
 def SimpleKriging(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype):
     """
-    SIMPLE KRIGING
-    Computes the simple kriging estimate and variance.
-    Written by Dario Grana (August 2020)
+    SIMPLE KRIGING computes the simple kriging estimate and variance 
+    Parameters:
+          xcoord = coordinates of the location for the estimation (1, ndim)
+          dcoords = coordinates of the measurements (ns, ndim)
+          dvalues = values of the measurements (ns, 1)
+          xmean = prior mean
+          xvar = prior variance
+          h = distance
+          l = correlation length
+          type = function ype ('exp', 'gau', 'sph')
+    Returns:
+           xsk = kriging estimate
+           xvarsk = kriging variance
 
-    Parameters
-    ----------
-    xcoord : array_like
-        Coordinates of the location for the estimation (1, ndim).
-    dcoords : array_like
-        Coordinates of the measurements (ns, ndim).
-    dvalues : array_like
-        Values of the measurements (ns, 1).
-    xmean : float
-        Prior mean.
-    xvar : float
-        Prior variance.
-    l : float
-        Correlation length.
-    krigtype : str
-        Function type ('exp', 'gau', 'sph').
-
-    Returns
-    -------
-    xsk : array_like
-        Kriging estimate.
-    xvarsk : array_like
-        Kriging variance.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.4
     """
+
     # kriging matrix and vector
     nd = dcoords.shape[0]
     krigmatr = np.ones((nd, nd))
@@ -335,37 +255,30 @@ def SimpleKriging(xcoord, dcoords, dvalues, xmean, xvar, l, krigtype):
     krigmatr = krigmatr + 0.000001*xvar*np.eye(krigmatr.shape[0])
 
     # kriging weights
-    wkrig = np.linalg.lstsq(krigmatr, krigvect)[0]
+    wkrig = np.linalg.lstsq(krigmatr, krigvect,rcond=None)[0]
 
     # kriging mean
     xsk = xmean + np.sum(wkrig * (dvalues - xmean))
     # kriging variance
     xvarsk = xvar - np.sum(wkrig * krigvect)
-
+    
     return xsk, xvarsk
-
-
+    
 def MarkovChainSimulation(T, ns, nsim):
     """
-    MARKOV CHAIN SIMULATION
-    Simulates 1D realizations of a discrete random variable based on
-    a stationary first-order Markov chain with given transition probability matrix.
-    Written by Dario Grana (August 2020)
+    MARKOV CHAIN SIMULATION simulates 1D realizations of a discrete random 
+    variable based on a stationary first-order Markov chain with given
+    transition probability matrix 
+    Parameters:
+          T = transition  probability matrix 
+          ns = number of samples
+          nsim = number of simulations
+    Returns:
+           fsim = realizations (ns, nsim)
 
-    Parameters
-    ----------
-    T : array_like
-        Transition  probability matrix.
-    ns : int
-        Number of samples.
-    nsim : int
-        Number of simulations.
-
-    Returns
-    -------
-    fsim : array_like
-        Realizations (ns, nsim).
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 4.4
     """
+
     fsim = np.zeros((ns, nsim))
     fsim = fsim.astype(int)
     Tpow = matrix_power(T, 100)
@@ -377,97 +290,70 @@ def MarkovChainSimulation(T, ns, nsim):
             fcond = np.zeros((1,T.shape[1]))
             fcond[0,:] = T[fsim[i-1,j], :]
             fsim[i, j] = RandDisc(fcond)
-
+    
     return fsim
-
 
 def RadialCorrLength(lmin, lmax, azim, theta):
     """
-    RADIAL CORR LENGTH
-    Computes the radial correlation length.
-    Written by Dario Grana (August 2020)
+    RADIAL CORR LENGTH computes the radial correlation length 
+    Parameters:
+          lmin = minimum correlation length
+          lmax = aaximum correlation length
+          azim = azimuth
+          theta = radial coordinate
+    Returns:
+           l = radial correlation length
 
-    Parameters
-    ----------
-    lmin : float
-        Minimum correlation length.
-    lmax : float
-        Maximum correlation length.
-    azim : float
-        Azimuth.
-    theta : float
-        Radial coordinate.
-
-    Returns
-    -------
-    l : float
-        Radial correlation length.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     l = np.sqrt((lmin ** 2 * lmax ** 2) / (lmax ** 2 * (np.sin(azim - theta)) ** 2 + lmin ** 2 * (np.cos(azim - theta)) ** 2))
-
+                                              
     return l
-
 
 def SpatialCovariance1D(h, l, krigtype):
     """
-    SPATIAL COVARIANCE 1D
-    Computes the 1D spatial covariance function.
-    Written by Dario Grana (August 2020)
+    SPATIAL COVARIANCE 1D computes the 1D spatial covariance function 
+    Parameters:
+          l = correlation length
+          h = distance
+          type = function ype ('exp', 'gau', 'sph')
+    Returns:
+           C = covariance
 
-    Parameters
-    ----------
-    l : float
-        Correlation length.
-    h : float
-        Distance.
-    krigtype : str
-        Function type ('exp', 'gau', 'sph').
-
-    Returns
-    -------
-    C : array_like
-        Covariance.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     if krigtype == 'exp':
         C = ExpCov(h, l)
     elif krigtype == 'gau':
         C = GauCov(h, l)
     elif krigtype == 'sph':
-        C = SphCov(h, l)
+        C = SphCov(h, l)  
     else:
-        print('error')
-
+        print('error')   
+        
     return C
-
-
+    
 def SpatialCovariance2D(lmin, lmax, azim, theta, h, krigtype):
     """
-    SPATIAL COVARIANCE 2D
-    Computes the 2D anisotropic spatial covariance function.
-    Written by Dario Grana (August 2020)
+    SPATIAL COVARIANCE 2D computes the 2D anisotropic spatial covariance 
+    function 
+    Parameters:
+          lmin = minimum correlation length
+          lmax = aaximum correlation length
+          azim = azimuth
+          theta = radial coordinate
+          h = distance
+          type = function ype ('exp', 'gau', 'sph')
+    Returns:
+           C = covariance
 
-    Parameters
-    ----------
-    lmin : float
-        Minimum correlation length.
-    lmax : float
-        Maximum correlation length.
-    azim : float
-        Azimuth.
-    theta : float
-        Radial coordinate.
-    h : float
-        Distance.
-    krigtype : str
-        Function type ('exp', 'gau', 'sph').
-
-    Returns
-    -------
-    C : array_like
-        Covariance.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.2
     """
+
     # covariance function
     if krigtype == 'exp':
         C = ExpCov(h, RadialCorrLength(lmin, lmax, azim, theta))
@@ -476,42 +362,31 @@ def SpatialCovariance2D(lmin, lmax, azim, theta, h, krigtype):
     elif krigtype == 'sph':
         C = SphCov(h, RadialCorrLength(lmin, lmax, azim, theta))
     else:
-        print('error')
-
-    return C
-
+        print('error')    
+        
+    return C    
 
 def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, krig):
     """
-    SEQ GAUSSIAN SIMULATION
-    Generates a realization of the random variable conditioned on
-    the available measurements using Sequential Gaussian Simulation.
-    Written by Dario Grana (August 2020)
+    SEQ GAUSSIAN SIMULATION  generates a realization of the random variable 
+    conditioned on the available measurements using Sequential Gaussian
+    Simulation
+    Parameters:
+          xcoords = coordinates of the locations for the estimation (np, ndim)
+          dcoords = coordinates of measurements (nd,ndim)
+          dvalues = values of measurements (nd,1)
+          xmean = prior mean
+          xvar = prior variance
+          h = distance
+          l = correlation length
+          type = function ype ('exp', 'gau', 'sph')
+          krig = kriging type (0=simple, 1=ordinary)
+    Returns:
+           sgsim = realization
 
-    Parameters
-    ----------
-    xcoord : array_like
-        Coordinates of the location for the estimation (np, ndim).
-    dcoords : array_like
-        Coordinates of the measurements (nd, ndim).
-    dvalues : array_like
-        Values of the measurements (nd, 1).
-    xmean : float
-        Prior mean.
-    xvar : float
-        Prior variance.
-    l : float
-        Correlation length.
-    krigtype : str
-        Function type ('exp', 'gau', 'sph').
-    krig : int
-        Kriging type (0=simple, 1=ordinary).
-
-    Returns
-    -------
-    sgsim : array_like
-        Realization.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 3.5
     """
+
     # initial parameters
     n = xcoords.shape[0]
     nd = dcoords.shape[0]
@@ -532,10 +407,6 @@ def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, k
     pathcoords = nonsimcoords[pathind, :]
     simval = np.zeros((npl, 1))
 
-    # if the xmean is a single value, transform to an array
-    if type(xmean) == float:
-        xmean = xmean*np.ones((n, 1))
-
     # sequential simulation
     for i in range(npl):
         if dcoords.shape[0] < nmax:
@@ -551,54 +422,41 @@ def SeqGaussianSimulation(xcoords, dcoords, dvalues, xmean, xvar, l, krigtype, k
 
         # kriging
         if krig == 0:
-            krigmean, krigvar = SimpleKriging(pathcoords[i,:], dc, dz, xmean[pathind[i]], xvar, l, krigtype)
+            krigmean, krigvar = SimpleKriging(pathcoords[i,:], dc, dz, xmean, xvar, l, krigtype)
         else:
             krigmean, krigvar = OrdinaryKriging(pathcoords[i,:], dc, dz, xvar, l, krigtype)
-
+  
         # realization
         simval[pathind[i],0] = krigmean + np.sqrt(krigvar) * np.random.randn(1)
-
         # Adding simulated value the vector of conditioning data
         dcoords = np.vstack((dcoords, pathcoords[i, :]))
         dvalues = np.vstack((dvalues, simval[pathind[i]]))
 
     # Assigning the sampled values to the simulation grid
     sgsim[sgsim[:,0] == -999, 0] = simval[:,0]     
-
+    
     return sgsim
-
 
 def SeqIndicatorSimulation(xcoords, dcoords, dvalues, nf, pprior, l, krigtype):
     """
-    SEQ INDICATOR SIMULATION
-    Generates a realization of the discrete random variable conditioned on
-    the available measurements using Sequential Indicator Simulation.
-    Written by Dario Grana (August 2020)
+    SEQ INDICATOR SIMULATION  generates a realization of the discrete random 
+    variable conditioned on the available measurements using Sequential 
+    Indicator Simulation
+    Parameters:
+          xcoords = coordinates of the locations for the estimation (np, ndim)
+          dcoords = coordinates of measurements (nd,ndim)
+          dvalues = values of the measurements (ns, 1)
+          nf = number of possible outcomes (e.g. number of facies)
+          pprior = prior probability (1,nf)
+          h = distance
+          l = correlation range, for different range for each facies, l is an array with nf components
+          type = function type ('exp', 'gau', 'sph') for different type for each facies, type is an array wuth nf components
+    Returns:
+           sgsim = realization
 
-    Parameters
-    ----------
-    xcoord : array_like
-        Coordinates of the location for the estimation (np, ndim).
-    dcoords : array_like
-        Coordinates of the measurements (nd, ndim).
-    dvalues : array_like
-        Values of the measurements (ns, 1).
-    nf : int
-        Number of possible outcomes (e.g. number of facies).
-    pprior : array_like
-        Prior probability (1, nf).
-    l : float or array_like
-        Correlation range, for different range for each facies
-        (array with nf components).
-    krigtype : str
-        Function type ('exp', 'gau', 'sph') for different type for each facies,
-        (array with nf components).
-
-    Returns
-    -------
-    sgsim : array_like
-        Realization.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 4.2
     """
+
     # initial parameters
     n = xcoords.shape[0]
     nd = dcoords.shape[0]
@@ -611,6 +469,7 @@ def SeqIndicatorSimulation(xcoords, dcoords, dvalues, nf, pprior, l, krigtype):
     for i in range(nd):
         ind = np.argmin(np.sum((xcoords - dcoords[i, :]) ** 2, axis=1))
         sgsim[ind] = dvalues[i]
+
 
     # random path of locations
     npl = n - nd
@@ -632,36 +491,30 @@ def SeqIndicatorSimulation(xcoords, dcoords, dvalues, nf, pprior, l, krigtype):
             dc = dcoords[ind[0:nmax-1],:]
             dz = dvalues[ind[0:nmax-1]]
             dz = dz.astype(int)
+            
         ikprob, ikmap = IndicatorKriging(pathcoords[i,:], dc, dz, nf, pprior, l, krigtype)
 
-        # realization
+        # realization        
         simval[pathind[i]] = RandDisc(ikprob)
-
         # Adding simulated value the vector of conditioning data
         dcoords = np.vstack((dcoords, pathcoords[i, :]))
         dvalues = np.vstack((dvalues, simval[pathind[i]]))
 
     # Assigning the sampled values to the simulation grid
     sgsim[sgsim[:,0] == -999, 0] = simval[:,0]     
-
+    
     return sgsim
-
 
 def RandDisc(p):
     """
-    RANDDISC
-    Samples a discrete random variable with a given probability mass function.
-    Written by Dario Grana (August 2020)
+    RANDDISC samples a discrete random variable with a given probability
+    mass function
+    Parameters:
+          p = probabilities 
+    Returns:
+           index = sampled value
 
-    Parameters
-    ----------
-    p : array_like
-        Probabilities.
-
-    Returns
-    -------
-    index : array_like
-        Sampled value.
+    References: Grana, Mukerji, Doyen, 2021, Seismic Reservoir Modeling: Wiley - Chapter 4.4
     """
     u = np.random.rand(1)
     index = 0
@@ -669,5 +522,8 @@ def RandDisc(p):
     while ((u > s) and (index < p.shape[1])):
         index = index + 1
         s = s + p[0,index]
-
+    
     return index
+
+                                 
+   

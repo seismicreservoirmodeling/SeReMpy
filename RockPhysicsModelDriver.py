@@ -3,7 +3,6 @@
 """
 Created on Tue Nov 17 17:43:29 2020
 
-@author: dariograna
 """
 
 #% Rock Physics Model Driver %%
