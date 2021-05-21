@@ -4,6 +4,8 @@
 Created on Fri Nov 20 18:19:26 2020
 
 @author: dariograna
+
+Reference: Grana and de Figueiredo, 2021, SeReMpy
 """
 
 #% Ensemble Smoother Seismic Inversion Driver %%
@@ -125,13 +127,18 @@ plt.grid()
 plt.ylim([max(Time), min(Time)])
 plt.xlabel('S-wave velocity (km/s)')
 plt.subplot(133)
+plt.plot(Rho, Time, 'k')
+plt.plot(Rhoprior, Time, 'r')
 plt.plot(Rhosim, Time, 'b')
 plt.plot(Rho, Time, 'k')
 plt.plot(Rhoprior, Time, 'r')
 plt.grid()
 plt.ylim([max(Time), min(Time)])
 plt.xlabel('Density (g/cm^3)')
+plt.suptitle('Prior realizations')
+plt.legend(['Reference model', 'Prior mean','Prior Realizations'],loc ="lower right")
 plt.show()
+
 
 #% ESMDA seismic inversion
 niter = 4
@@ -173,10 +180,14 @@ plt.grid()
 plt.ylim([max(Time), min(Time)])
 plt.xlabel('S-wave velocity (km/s)')
 plt.subplot(133)
+plt.plot(Rho, Time, 'k')
+plt.plot(Rhomean, Time, 'r')
 plt.plot(Rhopost, Time, 'b')
 plt.plot(Rho, Time, 'k')
 plt.plot(Rhomean, Time, 'r')
 plt.grid()
 plt.ylim([max(Time), min(Time)])
 plt.xlabel('Density (g/cm^3)')
+plt.suptitle('Posterior realizations')
+plt.legend(['Reference model', 'Posterior mean','Posterior Realizations'],loc ="lower right")
 plt.show()

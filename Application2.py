@@ -4,6 +4,8 @@
 Created on Fri Jan 15 09:43:01 2021
 
 @author: dariograna
+
+Reference: Grana and de Figueiredo, 2021, SeReMpy
 """
 
 from scipy.io import loadmat

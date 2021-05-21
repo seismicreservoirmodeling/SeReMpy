@@ -4,6 +4,8 @@
 Created on Wed Nov 18 13:25:49 2020
 
 @author: dariograna
+
+Reference: Grana and de Figueiredo, 2021, SeReMpy
 """
 
 #% Geostatistics Continuous Driver %%

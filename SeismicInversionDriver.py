@@ -4,6 +4,8 @@
 Created on Thu Nov 19 18:42:46 2020
 
 @author: dariograna
+
+Reference: Grana and de Figueiredo, 2021, SeReMpy
 """
 
 #% Seismic inversion Driver %%
@@ -11,11 +13,13 @@ Created on Thu Nov 19 18:42:46 2020
 # (Buland and Omre, 2003) to predict the elastic properties (P- and S-wave
 # velocity and density) from seismic data.
 
+from numpy import matlib
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
 from scipy import signal
 import numpy as np
 from Inversion import *
+
 
 #% Available data and parameters
 # Load data (seismic data and time)
@@ -80,8 +84,8 @@ Rhoprior = signal.filtfilt(b, a, np.squeeze(Rho))
 
 #% Spatial correlation matrix
 corrlength = 5 * dt
-trow = np.matlib.repmat(np.arange(0, nm * dt, dt), nm, 1)
-tcol = np.matlib.repmat(trow[0,:].reshape(nm,1), 1, nm)
+trow = np.matlib.tile(np.arange(0, nm * dt, dt), (nm, 1))
+tcol = np.matlib.tile(trow[0,:].reshape(nm,1), (1, nm))
 tdis = abs(trow - tcol)
 sigmatime = np.exp(-(tdis / corrlength) ** 2)
 sigma0 = np.cov(np.hstack([np.log(Vp), np.log(Vs), np.log(Rho)]).T)
