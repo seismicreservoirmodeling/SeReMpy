@@ -535,8 +535,6 @@ def BackusAverageIsotropic(Vp, Vs, Rho, window_depth, d_depth):
     """
     window_length = round(window_depth/d_depth)
 
-    print(window_length)
-
     # Moving windows/wights/filter:
     weights = np.ones(( window_length ,))
     weights = weights/weights.sum()
