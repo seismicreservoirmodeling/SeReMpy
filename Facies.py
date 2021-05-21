@@ -3,6 +3,7 @@
 """
 Created on Wed Nov 18 21:06:47 2020
 
+@author: dariograna
 """
 import numpy as np
 from scipy.stats import multivariate_normal

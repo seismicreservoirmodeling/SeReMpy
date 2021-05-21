@@ -5,7 +5,6 @@ Created on Wed Nov 18 22:31:23 2020
 
 @author: dariograna
 
-Reference: Grana and De Figueiredo, 2021, SeReMpy
 """
 
 #% Facies Classification Driver %%

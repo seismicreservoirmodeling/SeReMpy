@@ -5,7 +5,7 @@ Created on Fri Nov 20 18:19:51 2020
 
 @author: dariograna
 
-Reference: Grana and De Figueiredo, 2021, SeReMpy
+Reference: Grana and de Figueiredo, 2021, SeReMpy
 """
 
 #% Ensemble Smoother Petrophysical Inversion Driver %%

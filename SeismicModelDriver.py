@@ -5,7 +5,7 @@ Created on Thu Nov 19 16:36:59 2020
 
 @author: dariograna
 
-Reference: Grana and De Figueiredo, 2021, SeReMpy
+Reference: Grana and de Figueiredo, 2021, SeReMpy
 """
 
 #% Seismic Model Driver %%

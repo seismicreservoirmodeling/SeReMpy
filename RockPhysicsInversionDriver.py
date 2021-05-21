@@ -5,7 +5,7 @@ Created on Fri Nov 20 07:24:51 2020
 
 @author: dariograna
 
-Reference: Grana and De Figueiredo, 2021, SeReMpy
+Reference: Grana and de Figueiredo, 2021, SeReMpy
 """
 
 #% Rock physics inversion Driver %%

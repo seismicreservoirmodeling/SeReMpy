@@ -5,7 +5,7 @@ Created on Fri Jan 15 09:08:52 2021
 
 @author: dariograna
 
-Reference: Grana and De Figueiredo, 2021, SeReMpy
+Reference: Grana and de Figueiredo, 2021, SeReMpy
 """
 
 from scipy.io import loadmat

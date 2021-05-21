@@ -4,8 +4,6 @@ Created on Tue Nov 17 20:05:53 2020
 
 @author: dariograna
 
-Reference: Grana and De Figueiredo, 2021, SeReMpy
-
 """
 
 import numpy as np
