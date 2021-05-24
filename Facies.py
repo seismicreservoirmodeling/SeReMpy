@@ -130,12 +130,10 @@ def ConfusionMatrix(ftrue, fpred, nf):
     confmat : array_like
         confusion matrix (absolute frequencies)
     """
-
-     ns = ftrue.shape[0]
-     ftrue = ftrue.astype(int)
-     fpred = fpred.astype(int)
-     confmat = np.zeros((nf, nf))
-     for i in range(ns):
-         confmat[ftrue[i], fpred[i]] = confmat[ftrue[i], fpred[i]] + 1
-     return confmat
-    
+    ns = ftrue.shape[0]
+    ftrue = ftrue.astype(int)
+    fpred = fpred.astype(int)
+    confmat = np.zeros((nf, nf))
+    for i in range(ns):
+        confmat[ftrue[i], fpred[i]] = confmat[ftrue[i], fpred[i]] + 1
+    return confmat
