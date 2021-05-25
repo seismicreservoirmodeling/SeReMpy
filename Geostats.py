@@ -705,5 +705,45 @@ def RandDisc(p):
     
     return index
 
-                                 
-   
+def NonParametricToUniform(data2transform, reference_variables, gridsize=0.05):
+
+    n_variables = int(data2transform.ravel().shape[0]/data2transform.shape[0])
+    if n_variables == 1:
+        data2transform = data2transform.reshape( ( data2transform.shape[0], n_variables) )
+        reference_variables = reference_variables.reshape( ( reference_variables.shape[0], n_variables) )
+
+    min2norm = reference_variables.min()
+    #reference_variables = reference_variables - np.tile(min2norm, (reference_variables.shape[0], 1))
+    reference_variables = reference_variables - min2norm
+    max2norm = reference_variables.max()
+    #reference_variables = reference_variables/np.tile(max2norm, (reference_variables.shape[0], 1))
+    reference_variables = reference_variables / max2norm
+
+
+    #data2transform = data2transform - np.tile(min2norm, (data2transform.shape[0], 1))
+    #data2transform = data2transform/np.tile(max2norm, (data2transform.shape[0], 1))
+    data2transform = data2transform - min2norm
+    data2transform = data2transform/max2norm
+
+    variable_uniform = np.zeros( data2transform.shape )
+    for i in np.arange(data2transform.shape[0]):
+
+        reference_variables_filtered = reference_variables
+
+        for var in np.arange(n_variables):
+
+            logs_cumhist = np.sort(reference_variables_filtered[:,var], axis=None)
+            if logs_cumhist.shape[0]>1:
+                logs_cumhist = logs_cumhist + np.arange(logs_cumhist.shape[0])*0.000000001
+                variable_uniform[i,var] = np.interp(data2transform[i,var], logs_cumhist, np.arange(logs_cumhist.shape[0])/logs_cumhist.shape[0])
+            else:
+                variable_uniform[i,var] = 0.5   
+
+    return variable_uniform
+
+
+def UniformToNonParametric(data2transform, reference_variables, gridsize):
+
+    data = 0
+
+    return data
