@@ -12,8 +12,10 @@ from scipy.io import loadmat
 import matplotlib.pyplot as plt
 from scipy import signal
 import numpy as np
-from Inversion import *
 from numpy import matlib
+
+from context import SeReMpy
+from SeReMpy.Inversion import *
 
 #% Application4
 # Load data (seismic data and time)

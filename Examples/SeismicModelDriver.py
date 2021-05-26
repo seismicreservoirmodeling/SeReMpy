@@ -18,7 +18,9 @@ Reference: Grana and de Figueiredo, 2021, SeReMpy
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
 import numpy as np
-from Inversion import *
+
+from context import SeReMpy
+from SeReMpy.Inversion import *
 
 #% Available data and parameters
 # Load data (elastic properties and depth)

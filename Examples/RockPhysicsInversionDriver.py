@@ -28,9 +28,10 @@ from numpy.linalg import multi_dot
 from scipy import stats
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
-from RockPhysics import *
-from Inversion import *
 
+from context import SeReMpy
+from SeReMpy.Inversion import *
+from SeReMpy.RockPhysics import *
 
 #% Available data and parameters
 # Load data (seismic data and time)

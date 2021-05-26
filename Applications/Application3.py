@@ -12,7 +12,9 @@ from scipy.io import loadmat
 import scipy.spatial.distance
 import matplotlib.pyplot as plt
 import numpy as np
-from Geostats import *
+
+from context import SeReMpy
+from SeReMpy.Geostats import *
 
 
 #% Application3  (temperature Yellowstone)

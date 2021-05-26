@@ -19,8 +19,10 @@ from scipy import stats
 from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt
 import numpy as np
-from Geostats import *
-from Facies import *
+
+from context import SeReMpy
+from SeReMpy.Facies import *
+from SeReMpy.Geostats import *
 
 # available data
 x = np.loadtxt('Data/data4.dat')

@@ -4,7 +4,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from Geostats import NonParametricToUniform, UniformToNonParametric
+from context import SeReMpy
+from SeReMpy.Geostats import NonParametricToUniform, UniformToNonParametric
+
 
 # Load example data following a non-parametric six-variate distribution
 data2transform = np.genfromtxt('Data/NonParametricVariables.csv', delimiter=',')
@@ -13,9 +15,9 @@ data2transform = data2transform[1:,:]
 # number of point to use only part of the data
 n_ptos = 5000
 # transform the non parametric distributed variable to follow a uniform distribution
-variable_uniform = NonParametricToUniform(data2transform[0:n_ptos,:], data2transform)
+variable_uniform = NonParametricToUniform(data2transform[0:n_ptos,:], data2transform[0:n_ptos,:])
 # transform back the uniform distributed variables to follow the non parametric distribution
-variable_non_parametric = UniformToNonParametric(variable_uniform, data2transform)
+variable_non_parametric = UniformToNonParametric(variable_uniform, data2transform[0:n_ptos,:])
 
 # show plots
 fig, axs = plt.subplots(1, 2)

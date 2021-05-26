@@ -11,8 +11,10 @@ Reference: Grana and de Figueiredo, 2021, SeReMpy
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
 import numpy as np
-from Geostats import *
-from Facies import *
+
+from context import SeReMpy
+from SeReMpy.Geostats import *
+from SeReMpy.Facies import *
 
 
 #% Application2

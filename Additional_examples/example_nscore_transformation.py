@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 
-from Geostats import *
-
+from context import SeReMpy
+from SeReMpy.Geostats import *
 
 # data
 x = np.loadtxt('./Data/data1.dat')

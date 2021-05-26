@@ -1,8 +1,11 @@
 
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-from RockPhysics import BackusAverageIsotropic
+from context import SeReMpy
+from SeReMpy.RockPhysics import BackusAverageIsotropic
 
 n_ptos = 500
 
