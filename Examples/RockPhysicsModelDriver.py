@@ -26,8 +26,9 @@ Reference: Grana and de Figueiredo, 2021, SeReMpy
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
 import numpy as np
-from RockPhysics import *
 
+from context import SeReMpy
+from SeReMpy.RockPhysics import *
 
 #% Available data and parameters
 # Load data (porosity and depth)

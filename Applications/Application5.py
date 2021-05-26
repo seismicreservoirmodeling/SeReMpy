@@ -12,10 +12,12 @@ from scipy.io import loadmat
 import matplotlib.pyplot as plt
 from scipy import signal
 import numpy as np
-from Inversion import *
-from Geostats import *
-from RockPhysics import *
 from numpy import matlib
+
+from context import SeReMpy
+from SeReMpy.Inversion import *
+from SeReMpy.Geostats import *
+from SeReMpy.RockPhysics import *
 
 
 #% Application5

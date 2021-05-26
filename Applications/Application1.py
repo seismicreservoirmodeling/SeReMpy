@@ -11,8 +11,10 @@ Reference: Grana and de Figueiredo, 2021, SeReMpy
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
 import numpy as np
-from RockPhysics import *
-from Facies import *
+
+from context import SeReMpy
+from SeReMpy.RockPhysics import *
+from SeReMpy.Facies import *
 
 
 #% Application1
