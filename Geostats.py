@@ -705,5 +705,136 @@ def RandDisc(p):
     
     return index
 
-                                 
-   
+def NonParametricToUniform(data2transform, reference_variables, gridsize=0.05):
+    """    
+    STEPWISE CONDITIONAL TRANSFORMATION (non-par to uniform)
+    Tranform a non-parametric distributed variables to a uniformly distributed variables following the stepwise transformation approach
+
+    REFRERENCE:
+    Direct Multivariate Simulation - A stepwise conditional transformation for multivariate geostatistical simulation
+    de Figueiredo et al., 2020
+
+    Written by Leandro P. de Figueiredo (May 2021)    
+
+    Parameters
+    ----------
+    data2transform : array_like
+        Non-parametric distributed variables to be transformed to a uniform distribution, each line is a simulation value and each column is a different variable.
+    reference_variables : array_like
+        Non-parametric distributed variables to be used as the reference distribution, each line is a simulation value/point and each column is a different variable..
+    gridsize : float
+        Grid size for conditioning. Low values may cause not enought points to compute the conditional distribution. High values may cause a non accurate transformation.
+        
+    Returns
+    -------
+    variable_uniform : array_like
+        Uniformly distributed variables related to data2transform.
+    """
+    # Treatment to ensure that the method works with inputs arrays of shape (n,) or (n,n_variables)
+    n_points = data2transform.shape[0]
+    n_variables = int(data2transform.ravel().shape[0]/data2transform.shape[0])
+    if n_variables == 1:
+        data2transform = data2transform.reshape( ( data2transform.shape[0], n_variables) )
+        reference_variables = reference_variables.reshape( ( reference_variables.shape[0], n_variables) )
+
+    # Normalize the input variables
+    min2norm = reference_variables.min(axis=0)
+    reference_variables = reference_variables - np.tile(min2norm, (reference_variables.shape[0], 1))
+    max2norm = reference_variables.max()
+    reference_variables = reference_variables / np.tile(max2norm, (reference_variables.shape[0], 1))
+    data2transform = data2transform - np.tile(min2norm, (data2transform.shape[0], 1))
+    data2transform = data2transform / np.tile(max2norm, (data2transform.shape[0], 1))
+
+    variable_uniform = np.zeros( data2transform.shape )
+    for i in np.arange(data2transform.shape[0]):
+
+        reference_variables_filtered = reference_variables   
+
+        for var in np.arange(n_variables):
+            # Compute the empirical cumulative distribution for the variable var
+            empirical_cumulative = np.sort(reference_variables_filtered[:,var], axis=None)            
+            if empirical_cumulative.shape[0]>1:
+                # If we have data/statistics/enough data
+                empirical_cumulative = empirical_cumulative + np.arange(empirical_cumulative.shape[0])*0.000000001 #infinitesimal line to avoid numerical issues in interp
+                # Apply cumulative distribution to the varible:
+                variable_uniform[i,var] = np.interp(data2transform[i,var], empirical_cumulative, np.arange(empirical_cumulative.shape[0])/empirical_cumulative.shape[0])
+            else:
+                variable_uniform[i,var] = 0.5   
+
+            # Filter the data to obtain the statistics of the distribution given by the drawn variables variable_uniform[i,0:var]
+            distance_in_axis = abs( reference_variables_filtered[:,var] - data2transform[i,var] )
+            index = np.nonzero( distance_in_axis > gridsize )            
+            reference_variables_filtered = np.delete(reference_variables_filtered, index, axis=0)
+
+    return variable_uniform
+
+
+def UniformToNonParametric(data2transform, reference_variables, gridsize=0.05):
+    """    
+    STEPWISE CONDITIONAL TRANSFORMATION (uniform to non-par)
+    Tranform a uniformly distributed  variables to a non-parametric target distributed variables following the stepwise transformation approach
+
+    REFRERENCE:
+    Direct Multivariate Simulation - A stepwise conditional transformation for multivariate geostatistical simulation
+    de Figueiredo et al., 2020
+
+    Written by Leandro P. de Figueiredo (May 2021)    
+
+    Parameters
+    ----------
+    data2transform : array_like
+        Uniformly distributed variables to be transformed to a non parametric distribution, each line is a simulation value/point and each column is a different variable.
+    reference_variables : array_like
+        Non-parametric distributed variables to be used as the reference distribution, each line is a simulation value/point and each column is a different variable..
+    gridsize : float
+        Grid size for conditioning. Low values may cause not enought points to compute the conditional distribution. High values may cause a non accurate transformation.
+        
+    Returns
+    -------
+    variable_uniform : array_like
+        Uniformly distributed transformed variables of data2transform.
+    """
+    # Treatment to ensure that the method works with inputs arrays of shape (n,) or (n,n_variables)
+    n_points = data2transform.shape[0]
+    n_variables = int(data2transform.ravel().shape[0]/data2transform.shape[0])
+    if n_variables == 1:
+        data2transform = data2transform.reshape( ( data2transform.shape[0], n_variables) )
+        reference_variables = reference_variables.reshape( ( reference_variables.shape[0], n_variables) )
+
+    # Normalize the input variables
+    min2norm = reference_variables.min(axis=0)
+    reference_variables = reference_variables - np.tile(min2norm, (reference_variables.shape[0], 1))
+    max2norm = reference_variables.max()
+    reference_variables = reference_variables / np.tile(max2norm, (reference_variables.shape[0], 1))
+
+    num_point_without_statistic = 0
+    variable_nonParametric = np.zeros( data2transform.shape )
+    for i in np.arange(data2transform.shape[0]):
+
+        reference_variables_filtered = reference_variables   
+
+        for var in np.arange(n_variables):
+            # Compute the empirical cumulative distribution for the variable var
+            empirical_cumulative = np.sort(reference_variables_filtered[:,var], axis=None)            
+
+            if empirical_cumulative.shape[0]>1:
+                # If we have data/statistics/enough data
+                empirical_cumulative = empirical_cumulative + np.arange(empirical_cumulative.shape[0])*0.000000001 #infinitesimal line to avoid numerical issues in interp
+                # Apply cumulative distribution to the varible:
+                variable_nonParametric[i,var] = np.interp(data2transform[i,var], np.arange(empirical_cumulative.shape[0])/empirical_cumulative.shape[0], empirical_cumulative)
+            else:
+                # If we do not have data/statistics/enough data, draw from the marginal instead of conditional
+                num_point_without_statistic = num_point_without_statistic + 1
+                empirical_cumulative = np.sort(reference_variables[:,var], axis=None)
+                variable_nonParametric[i,var] = np.interp(data2transform[i,var], np.arange(empirical_cumulative.shape[0])/empirical_cumulative.shape[0], empirical_cumulative)
+
+            # Filter the data to obtain the statistics of the distribution given by the drawn variables variable_uniform[i,0:var]
+            distance_in_axis = abs( reference_variables_filtered[:,var] - variable_nonParametric[i,var] )
+            index = np.nonzero( distance_in_axis > gridsize )            
+            reference_variables_filtered = np.delete(reference_variables_filtered, index, axis=0)
+
+
+    variable_nonParametric = variable_nonParametric * np.tile(max2norm, (variable_nonParametric.shape[0], 1))
+    variable_nonParametric = variable_nonParametric + np.tile(min2norm, (variable_nonParametric.shape[0], 1))   
+
+    return variable_nonParametric
