@@ -1,5 +1,7 @@
 
-
+#
+# # EXAMPLE OF RUNNING ISOTROPIC BACKUS AVERAGE
+# 
 
 import numpy as np
 import matplotlib.pyplot as plt
