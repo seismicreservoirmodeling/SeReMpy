@@ -25,7 +25,7 @@ variable_non_parametric = UniformToNonParametric(variable_uniform, data2transfor
 # show plots
 fig, axs = plt.subplots(1, 2)
 axs[0].hist(data2transform[:,0], bins=15)
-axs[0].set_title('No-parametric distributed variable')
+axs[0].set_title('Non-parametric distributed variable')
 axs[1].hist(variable_uniform[:,0], bins=15)
 axs[1].set_title('Uniform distributed variable')
 
@@ -46,7 +46,7 @@ Z = np.reshape(kernel(positions).T, X.shape)
 ax[0].imshow(np.rot90(Z), cmap=color_map,extent=[xmin, xmax, ymin, ymax],aspect='auto')
 ax[0].set_xlim([xmin, xmax])
 ax[0].set_ylim([ymin, ymax])
-ax[0].set_title('No-parametric reference data')
+ax[0].set_title('Non-parametric reference data')
 ax[0].set_ylabel('z2')
 ax[0].set_xlabel('z1')
 
@@ -66,7 +66,7 @@ fig, ax = plt.subplots(1,2)
 xy = np.vstack([data2transform[:,0], data2transform[:,1]])
 z = stats.gaussian_kde(xy)(xy)
 ax[0].scatter(xy[0,:], xy[1,:], c=z, s=10)
-ax[0].set_title('No-parametric reference data')
+ax[0].set_title('Non-parametric reference data')
 ax[0].set_ylabel('z2')
 ax[0].set_xlabel('z1')
 
