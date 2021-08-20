@@ -162,7 +162,7 @@ plt.show()
 
 #% ESMDA petrophysical inversion
 niter = 4
-alpha = 1 / niter   # sum alpha = 1
+alpha = niter   # sum 1/alpha = 1
 PriorModels = np.vstack([Phisim, Claysim, Swsim])
 SeisData = np.vstack([Snear,Smid,Sfar])
 PostModels = PriorModels
