@@ -144,7 +144,7 @@ plt.show()
 
 #% ESMDA seismic inversion
 niter = 4
-alpha = 1 / niter   # sum alpha = 1
+alpha = niter   # sum 1/alpha = 1
 PriorModels = np.vstack([Vpsim, Vssim, Rhosim])
 SeisData = np.vstack([Snear,Smid,Sfar])
 PostModels = PriorModels
