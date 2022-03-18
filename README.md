@@ -1,6 +1,6 @@
 # SeReMpy
 
-![Example of a 1D petrophysical inversion](https://github.com/leandrofgr/SeReMpy/blob/main/Figure6a.tif)
+![Example of a 1D petrophysical inversion](https://github.com/leandrofgr/SeReMpy/blob/main/Figure6a.tif?raw=true)
 
 ### Seismic Reservoir Modeling Python package ###
 
