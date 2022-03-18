@@ -1,5 +1,9 @@
 # SeReMpy
-Seismic Reservoir Modeling Python package
+
+![Example of a 1D petrophysical inversion](https://github.com/leandrofgr/SeReMpy/blob/main/Figure6a.tif)
+
+### Seismic Reservoir Modeling Python package ###
+
 
 The SeReMpy package includes four libraries and a data folder:
 
