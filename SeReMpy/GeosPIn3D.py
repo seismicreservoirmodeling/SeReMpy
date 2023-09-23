@@ -7,12 +7,13 @@ Created on Mon Jul 24 11:08:27 2023
 """
 
 import numpy as np
+import scipy.sparse
 from scipy.linalg import pinvh
 from scipy.fftpack import fftn, ifftn
-from numpy.random import multivariate_normal
+from scipy.linalg import toeplitz
+# from numpy.random import multivariate_normal
+from scipy.stats import multivariate_normal
 from scipy.sparse import eye, diags, lil_matrix
-from RockPhysics import LinearizedRockPhysicsModel
-from Inversion import EnsembleSmootherMDA
 
 
 def AkiRichardsCoefficientsMatrix(Vp, Vs, theta, nv):
@@ -24,25 +25,25 @@ def AkiRichardsCoefficientsMatrix(Vp, Vs, theta, nv):
     # OUTPUT A = Aki Richards coefficients matrix
 
     # initial parameters
-    nsamples = len(Vp)
+    nt, ntrace = Vp.shape
     ntheta = len(theta)
-    A = diags(np.zeros((ntheta, nv*(nsamples-1))), format='lil')
+    A = np.zeros(((nt - 1) * ntheta, nv * (nt - 1), ntrace))
 
     # average velocities at the interfaces
-    avgVp = 0.5 * (Vp[:-1] + Vp[1:])
-    avgVs = 0.5 * (Vs[:-1] + Vs[1:])
+    avgVp = 1 / 2 * (Vp[:-1] + Vp[1:])
+    avgVs = 1 / 2 * (Vs[:-1] + Vs[1:])
 
     # reflection coefficients (Aki Richards linearized approximation)
     for i in range(ntheta):
-        cp = 0.5 * (1 + np.tan(np.deg2rad(theta[i])) ** 2) * np.ones(nsamples - 1)
-        cs = -4 * avgVs ** 2 / avgVp ** 2 * np.sin(np.deg2rad(theta[i])) ** 2
-        cr = 0.5 * (1 - 4 * avgVs ** 2 / avgVp ** 2 * np.sin(np.deg2rad(theta[i])) ** 2)
-        Acp = diags(cp, format='lil')
-        Acs = diags(cs, format='lil')
-        Acr = diags(cr, format='lil')
-        A[i*(nsamples-1):(i+1)*(nsamples-1), :] = diags([Acp, Acs, Acr], format='lil')
+        cp = 1 / 2 * (1 + np.tan(theta[i] * np.pi / 180) ** 2) * np.ones(nt - 1)
+        cs = -4 * (avgVs ** 2) / (avgVp ** 2) * np.sin(theta[i] * np.pi / 180) ** 2
+        cr = 1 / 2 * (1 - 4 * (avgVs ** 2) / (avgVp ** 2) * np.sin(theta[i] * np.pi / 180) ** 2)
+        Acp = np.array([np.diag(cp) for _ in range(ntrace)]).transpose(1, 2, 0)
+        Acs = np.array([np.diag(cs[:, i]) for i in range(ntrace)]).transpose(1, 2, 0)
+        Acr = np.array([np.diag(cr[:, i]) for i in range(ntrace)]).transpose(1, 2, 0)
+        A[i * (nt - 1): (i + 1) * (nt - 1), :, :] = np.concatenate([Acp, Acs, Acr], axis=1)
 
-    return A.tocsr()  # Convert to CSR format for better performance in matrix operations
+    return A
 
 
 def BayesPetroInversion3D_GMM(near, mid, far, TimeSeis, vpprior, vsprior, rhoprior, sigmaprior, elastrain, petrotrain, faciestrain, vpgrid, vsgrid, rhogrid, phigrid, claygrid, swgrid, sigmaerr, wavelet, theta, nv, rpsigmaerr):
@@ -93,46 +94,52 @@ def BayesPetroInversion3D_GMM(near, mid, far, TimeSeis, vpprior, vsprior, rhopri
     Swmap = np.zeros((nxl, nil, nm))
 
     # rock physics likelihood
-    petrogrid = np.column_stack([p.ravel() for p in np.meshgrid(phigrid, claygrid, swgrid)])
-    elasgrid = np.column_stack([p.ravel() for p in np.meshgrid(vpgrid, vsgrid, rhogrid)])
+    # rock physics likelihood
+    M1, M2, M3 = np.meshgrid(phigrid, claygrid, swgrid, indexing='ij')
+    M1 = M1.flatten(order='F').reshape(-1, 1)
+    M2 = M2.flatten(order='F').reshape(-1, 1)
+    M3 = M3.flatten(order='F').reshape(-1, 1)
+    petrogrid = np.hstack([M1, M2, M3])
+
+    M1, M2, M3 = np.meshgrid(vpgrid, vsgrid, rhogrid, indexing='ij')
+    M1 = M1.flatten(order='F').reshape(-1, 1)
+    M2 = M2.flatten(order='F').reshape(-1, 1)
+    M3 = M3.flatten(order='F').reshape(-1, 1)
+    elasgrid = np.hstack([M1, M2, M3])
     Ppetro = RockPhysicsGMM(faciestrain, petrotrain, elastrain, petrogrid, elasgrid, rpsigmaerr)
 
     # inversion
     for i in range(nxl):
-        print(f'Percentage progress: {round(i/nxl*100)} %')
-        for j in range(nil):
-            Seis = np.column_stack([near[i, j], mid[i, j], far[i, j]])
-            mmap, mtrans, strans, Time = SeismicInversion3D(Seis, TimeSeis, vpprior[i, j], vsprior[i, j], rhoprior[i, j], sigmaprior, sigmaerr, wavelet, theta, nv)
-            Vpmap[i, j] = mmap[:nm]
-            Vsmap[i, j] = mmap[nm:2*nm]
-            Rhomap[i, j] = mmap[2*nm:]
-            vptrans = mtrans[:nm]
-            vstrans = mtrans[nm:2*nm]
-            rhotrans = mtrans[2*nm:]
-            sigmatrans = np.diag(strans[np.array([round(nm/2), nm + round(nm/2), 2*nm + round(nm/2)])])
-            Pseis = np.zeros((elasgrid.shape[0], nm))
-            for k in range(nm):
-                Pseis[:, k] = multivariate_normal.pdf(elasgrid, [vptrans[k], vstrans[k], rhotrans[k]], sigmatrans)
-                Pseis[:, k] /= Pseis[:, k].sum()
-            Ppost = Ppetro.T @ Pseis
-            Ppostmarg = Ppost.reshape((ndiscr, ndiscr, ndiscr, nm))
-            Pphi = np.sum(np.sum(Ppostmarg, axis=2), axis=1)
-            Pclay = np.sum(np.sum(Ppostmarg, axis=2), axis=0)
-            Psw = np.sum(np.sum(Ppostmarg, axis=1), axis=0)
-            Pphi /= Pphi.sum()
-            Pclay /= Pclay.sum()
-            Psw /= Psw.sum()
-            Phimap[i, j] = phigrid[np.argmax(Pphi)]
-            Claymap[i, j] = claygrid[np.argmax(Pclay)]
-            Swmap[i, j] = swgrid[np.argmax(Psw)]
+        print(f'{i}/{nxl}')
+        # print(f'Percentage progress: {round(i / nxl * 100)} %')
+        Seis = np.hstack([near[i], mid[i], far[i]])
+        mmap, mtrans, strans, Time = SeismicInversion3D(Seis.T, TimeSeis, vpprior[i].T, vsprior[i].T, rhoprior[i].T,
+                                                        sigmaprior, sigmaerr, wavelet, theta, nv)
+        m_inv = mtrans.reshape(nv, -1, nil)
+        Pseis = [[multivariate_normal.pdf(elasgrid, mean=m_inv[:, jjj, iii],
+                                          cov=np.diag([strans[nm//2, iii], strans[nm+nm//2, iii], strans[2*nm+nm//2, iii]]))
+                  for iii in range(nil)] for jjj in range(nm)]
+        Pseis = np.array(Pseis)#.transpose(2, 0, 1)
+        Ppost = np.einsum('ij,kli->jkl', Ppetro, Pseis, optimize=True)
+        Ppost = Ppost.reshape(ndiscr, ndiscr, ndiscr, nm, nil)
+        # marginal posterior distributions
+        Pphi = np.sum(Ppost, axis=(0, 1))
+        Pclay = np.sum(Ppost, axis=(0, 2))
+        Psw = np.sum(Ppost, axis=(1, 2))
+
+        Pphi = Pphi / np.sum(Pphi, axis=0)
+        Pclay = Pclay / np.sum(Pclay, axis=0)
+        Psw = Psw / np.sum(Psw, axis=0)
+
+        Phimap[i] = phigrid[np.argmax(Pphi, axis=0), 0].T
+        Claymap[i] = claygrid[np.argmax(Pclay, axis=0), 0].T
+        Swmap[i] = swgrid[np.argmax(Psw, axis=0), 0].T
 
     return Vpmap, Vsmap, Rhomap, Phimap, Claymap, Swmap, Time
 
 
 def BayesPetroInversion3D_KDE(near, mid, far, TimeSeis, vpprior, vsprior, rhoprior, sigmaprior, elastrain, petrotrain, vpgrid, vsgrid, rhogrid, phigrid, claygrid, swgrid, sigmaerr, wavelet, theta, nv, h):
-    nxl = near.shape[0]
-    nil = near.shape[1]
-    nm = near.shape[2] + 1
+    nxl, nil, nm = near.shape[0], near.shape[1], near.shape[2] + 1
     ndiscr = len(phigrid)
     dt = TimeSeis[1] - TimeSeis[0]
     Time = np.arange(TimeSeis[0] - dt / 2, TimeSeis[-1] + dt, dt)
@@ -154,48 +161,40 @@ def BayesPetroInversion3D_KDE(near, mid, far, TimeSeis, vpprior, vsprior, rhopri
         (np.max(vpgrid) - np.min(vpgrid)) / h,
         (np.max(vsgrid) - np.min(vsgrid)) / h,
         (np.max(rhogrid) - np.min(rhogrid)) / h])
-    vpgrid, vsgrid, rhogrid = np.meshgrid(vpgrid, vsgrid, rhogrid)
-    elasevalpoints = np.column_stack((vpgrid.ravel(), vsgrid.ravel(), rhogrid.ravel()))
+    vpgrid, vsgrid, rhogrid = np.meshgrid(vpgrid, vsgrid, rhogrid, indexing='ij')
+    M1 = vpgrid.flatten(order='F').reshape(-1, 1)
+    M2 = vsgrid.flatten(order='F').reshape(-1, 1)
+    M3 = rhogrid.flatten(order='F').reshape(-1, 1)
+    elasevalpoints = np.hstack([M1, M2, M3])
     Ppetro = RockPhysicsKDE(petrotrain, elastrain, petrogrid, elasgrid, elasevalpoints, hm, hd)
 
     # inversion
     for i in range(nxl):
-        print('Percentage progress:', int(i / nxl * 100), '%')
-        for j in range(nil):
-            Seis = np.concatenate((near[i, j], mid[i, j], far[i, j]), axis=None)[:-1]
-            mmap, mtrans, strans, Time = SeismicInversion3D(Seis, TimeSeis, vpprior[i, j], vsprior[i, j], rhoprior[i, j], sigmaprior, sigmaerr, wavelet, theta, nv)
-            Vpmap[i, j] = mmap[:nm]
-            Vsmap[i, j] = mmap[nm:2 * nm]
-            Rhomap[i, j] = mmap[2 * nm:]
-            vptrans = mtrans[:nm]
-            vstrans = mtrans[nm:2 * nm]
-            rhotrans = mtrans[2 * nm:]
-            sigmatrans = np.array([[strans[round(nm / 2), 0], 0, 0],
-                                  [0, strans[nm + round(nm / 2), 0], 0],
-                                  [0, 0, strans[2 * nm + round(nm / 2), 0]]])
-            Pseis = np.zeros((len(elasevalpoints), nm))
-            for k in range(nm):
-                Pseis[:, k] = multivariate_normal.pdf(elasevalpoints, mean=[vptrans[k], vstrans[k], rhotrans[k]], cov=sigmatrans)
-                Pseis[:, k] /= np.sum(Pseis[:, k])
-            Ppost = Ppetro.T @ Pseis
-            Ppostmarg = np.zeros((ndiscr, ndiscr, ndiscr, nm))
-            Pphi = np.zeros((nm, ndiscr))
-            Pclay = np.zeros((nm, ndiscr))
-            Psw = np.zeros((nm, ndiscr))
-            for k in range(nm):
-                Ppostmarg[:, :, :, k] = Ppost[:, k].reshape((ndiscr, ndiscr, ndiscr))
-                Pphi[k, :] = np.sum(np.sum(Ppostmarg[:, :, :, k], axis=2), axis=1)
-                Pclay[k, :] = np.sum(np.sum(Ppostmarg[:, :, :, k], axis=2), axis=0)
-                Psw[k, :] = np.sum(np.sum(Ppostmarg[:, :, :, k], axis=1), axis=0)
-                Pphi[k, :] /= np.sum(Pphi[k, :])
-                Pclay[k, :] /= np.sum(Pclay[k, :])
-                Psw[k, :] /= np.sum(Psw[k, :])
-                ii = np.argmax(Pphi[k, :])
-                jj = np.argmax(Pclay[k, :])
-                kk = np.argmax(Psw[k, :])
-                Phimap[i, j, k] = phigrid[ii]
-                Claymap[i, j, k] = claygrid[jj]
-                Swmap[i, j, k] = swgrid[kk]
+        print(f'{i}/{nxl}')
+        # print(f'Percentage progress: {round(i / nxl * 100)} %')
+        Seis = np.hstack([near[i], mid[i], far[i]])
+        mmap, mtrans, strans, Time = SeismicInversion3D(Seis.T, TimeSeis, vpprior[i].T, vsprior[i].T, rhoprior[i].T,
+                                                        sigmaprior, sigmaerr, wavelet, theta, nv)
+        m_inv = mtrans.reshape(nv, -1, nil)
+        Pseis = [[multivariate_normal.pdf(elasevalpoints, mean=m_inv[:, jjj, iii],
+                                          cov=np.diag([strans[nm // 2, iii], strans[nm + nm // 2, iii],
+                                                       strans[2 * nm + nm // 2, iii]]))
+                  for iii in range(nil)] for jjj in range(nm)]
+        Pseis = np.array(Pseis)  # .transpose(2, 0, 1)
+        Ppost = np.einsum('ij,kli->jkl', Ppetro, Pseis, optimize=True)
+        Ppost = Ppost.reshape(ndiscr, ndiscr, ndiscr, nm, nil)
+        # marginal posterior distributions
+        Pphi = np.sum(Ppost, axis=(1, 2))
+        Pclay = np.sum(Ppost, axis=(0, 2))
+        Psw = np.sum(Ppost, axis=(0, 1))
+
+        Pphi = Pphi / np.sum(Pphi, axis=0)
+        Pclay = Pclay / np.sum(Pclay, axis=0)
+        Psw = Psw / np.sum(Psw, axis=0)
+
+        Phimap[i] = phigrid[np.argmax(Pphi, axis=0)].T
+        Claymap[i] = claygrid[np.argmax(Pclay, axis=0)].T
+        Swmap[i] = swgrid[np.argmax(Psw, axis=0)].T
 
     return Vpmap, Vsmap, Rhomap, Phimap, Claymap, Swmap, Time
 
@@ -233,13 +232,14 @@ def DifferentialMatrix(nt, nv):
     #       nv = number of model variables
     # OUTPUT D = differential matrix
 
-    I = eye(nt)
-    B = diags([-1, 1], [0, 1], shape=(nt - 1, nt), format='lil')
-    I = (I + B)[1:]
-    D = diags(np.zeros(((nt - 1) * nv, nt * nv)), format='lil')
-
+    I = np.eye(nt)
+    B = np.zeros((nt, nt))
+    B[1:, 0:- 1] = -np.eye(nt - 1)
+    I = (I + B)
+    J = I[1:, :]
+    D = np.zeros(((nt - 1) * nv, nt * nv))
     for i in range(nv):
-        D[i * (nt - 1):(i + 1) * (nt - 1), i * nt:(i + 1) * nt] = I
+        D[i * (nt - 1):(i + 1) * (nt - 1), i * nt:(i + 1) * nt] = J
 
     return D
 
@@ -247,6 +247,44 @@ def DifferentialMatrix(nt, nv):
 def EpanechnikovKernel(u):
     return (np.abs(u) <= 1) * (3/4) * (1 - u**2)
 
+
+def SeismicModel1D(Vp, Vs, Rho, Time, theta, W, D):
+    # SeismicModel1D computes synthetic seismic data according to a linearized
+    # seismic model based on the convolution of a wavelet and the linearized
+    # approximation of Zoeppritz equations
+    # INPUT Vp = P-wave velocity profile
+    #       Vs = S-wave velocity profile
+    #       Rho = Density profile
+    #       theta = vector of reflection angles
+    #       W = wavelet matrix
+    #       D = differential matrix
+    # OUTPUT Seis = vector of seismic data of size (nsamples x nangles, 1)
+    #        Time = seismic time  (nsamples, 1)
+    #        Cpp  = reflectivity coefficients matrix (nsamples x nangles, nsamples x nangles)
+
+    # number of variables
+    nv = 3
+
+    # logarithm of model variables
+    logVp = np.log(Vp)
+    logVs = np.log(Vs)
+    logRho = np.log(Rho)
+    m = np.concatenate((logVp, logVs, logRho))
+
+    # Aki Richards matrix
+    A = AkiRichardsCoefficientsMatrix(Vp, Vs, theta, nv)
+
+    # Reflectivity coefficients matrix
+    mder = D @ m
+    Cpp = A @ mder
+
+    # Seismic data matrix
+    Seis = W @ Cpp
+
+    # Time seismic measurements
+    TimeSeis = 0.5 * (Time[:-1] + Time[1:])
+
+    return Seis, TimeSeis, Cpp
 
 def ForwardGeopModel1D(Phi, Clay, Sw, regcoef, Time, theta, wavelet, nm, nv, nsim):
     # ForwardGeopModel1D computes predicted seismic data
@@ -270,7 +308,7 @@ def ForwardGeopModel1D(Phi, Clay, Sw, regcoef, Time, theta, wavelet, nm, nv, nsi
     W = WaveletMatrix(wavelet, nm, ntheta)
 
     for k in range(nsim):
-        SeisPred[:, k], _ = SeismicModel3D(Vp[:, k], Vs[:, k], Rho[:, k], Time, theta, W, D)
+        SeisPred[:, k], _, _ = SeismicModel1D(Vp[:, k], Vs[:, k], Rho[:, k], Time, theta, W, D)
 
     return SeisPred
 
@@ -306,11 +344,9 @@ def ForwardGeopModel3D(Phi, Clay, Sw, petrotrain, elastrain, Time, theta, wavele
     D = DifferentialMatrix(nm, nv)
     W = WaveletMatrix(wavelet, nm, ntheta)
 
-    for i in range(nxl):
-        print('Percentage progress of simulation: {:.1f} %'.format(i / nxl * 100))
-        for j in range(nil):
-            for k in range(nsim):
-                SeisPred[i, j, :, k], _ = SeismicModel3D(Vp[i, j, :, k], Vs[i, j, :, k], Rho[i, j, :, k], Time, theta, W, D)
+    for i in range(nsim):
+        print('Percentage progress of simulation: {:.1f} %'.format(i / nsim * 100))
+        SeisPred[:, :, :, i], _, _ = SeismicModel3D(Vp[:, :, :, i], Vs[:, :, :, i], Rho[:, :, :, i], Time, theta, W, D)
 
     return SeisPred, regcoef
 
@@ -333,34 +369,98 @@ def GeosPetroInversion3D(near, mid, far, TimeSeis, phiprior, clayprior, swprior,
     ## ESMDA petrophysical inversion
     alpha = 1 / niter
 
-    for i in range(nxl):
-        print('Percentage progress of inversion:', int(i / nxl * 100), '%')
-        for j in range(nil):
-            PostModels = np.vstack((Phisim[i, j].reshape(-1, nsim),
-                                    Claysim[i, j].reshape(-1, nsim),
-                                    Swsim[i, j].reshape(-1, nsim)))
-            SeisData = np.hstack((near[i, j], mid[i, j], far[i, j])).reshape(-1, 1)
-            SeisPred = SeisSim[i, j].T
-            for h in range(niter):
-                PostModels, _ = EnsembleSmootherMDA(PostModels, SeisData, SeisPred, alpha, sigmaerr)
-                Phipost = PostModels[:nm, :]
-                Claypost = PostModels[nm:2 * nm, :]
-                Swpost = PostModels[2 * nm:, :]
-                Phipost[Phipost < 0] = 0
-                Phipost[Phipost > 0.4] = 0.4
-                Claypost[Claypost < 0] = 0
-                Claypost[Claypost > 0.8] = 0.8
-                Swpost[Swpost < 0] = 0
-                Swpost[Swpost > 1] = 1
-                SeisPred = ForwardGeopModel1D(Phipost, Claypost, Swpost, regcoef, Time, theta, wavelet, nm, nv, nsim)
+    for h in range(niter):
+        for i in range(nxl):
+            print('Percentage progress of inversion:', (h*nxl+i) / (niter*nxl) * 100, '%')
+            PostModels = np.concatenate((Phisim[i], Claysim[i], Swsim[i]), axis=1)
+            SeisData = np.concatenate((near[i], mid[i], far[i]), axis=-1)
+            SeisData = np.expand_dims(SeisData, axis=-1)
+            SeisPred = SeisSim[i]
+            PostModels, _ = EnsembleSmootherMDA(PostModels, SeisData, SeisPred, alpha, sigmaerr)
+            Phipost = PostModels[:, :nm, :]
+            Claypost = PostModels[:, nm:2 * nm, :]
+            Swpost = PostModels[:, 2 * nm:, :]
+            Phipost[Phipost < 0] = 0
+            Phipost[Phipost > 0.4] = 0.4
+            Claypost[Claypost < 0] = 0
+            Claypost[Claypost > 0.8] = 0.8
+            Swpost[Swpost < 0] = 0
+            Swpost[Swpost > 1] = 1
 
-            # posterior mean models
-            mpost = np.mean(PostModels, axis=1)
-            Phimap[i, j] = mpost[:nm]
-            Claymap[i, j] = mpost[nm:2 * nm]
-            Swmap[i, j] = mpost[2 * nm:]
+
+            Phisim[i] = Phipost
+            Claysim[i] = Claypost
+            Swsim[i] = Swpost
+
+
+        Vp, Vs, Rho = LinearizedRockPhysicsModel(Phisim, Claysim, Swsim, regcoef)
+        D = DifferentialMatrix(nm, nv)
+        W = WaveletMatrix(wavelet, nm, len(theta))
+
+        for i in range(nsim):
+            SeisSim[:, :, :, i], _, _ = SeismicModel3D(Vp[:, :, :, i], Vs[:, :, :, i], Rho[:, :, :, i], Time, theta, W, D)
+
+    # posterior mean models
+    Phimap = np.mean(Phisim, axis=-1)
+    Claymap = np.mean(Claysim, axis=-1)
+    Swmap = np.mean(Swsim, axis=-1)
 
     return Phimap, Claymap, Swmap, Time
+
+
+
+def LinearizedRockPhysicsModel(Phi, Clay, Sw, R):
+    # LINEARIZED ROCK PHYSICS MODEL implements a linear rock physics model
+    # based on a multilinear regression
+    # INPUT Phi = Porosity
+    #       Clay = Clay volume
+    #       Sw = Shear modulus of dry rock
+    #       R = regression coefficients matrix (estimated with regress.m)
+    # OUTUPT Vp = P-wave velocity
+    #        Vs = S-wave velocity
+    #        Rho = Density
+
+    # Written by Dario Grana (August 2020)
+
+    # multilinear regression
+    Vp = R[0, 0] * Phi + R[0, 1] * Clay + R[0, 2] * Sw + R[0, 3]
+    Vs = R[1, 0] * Phi + R[1, 1] * Clay + R[1, 2] * Sw + R[1, 3]
+    Rho = R[2, 0] * Phi + R[2, 1] * Clay + R[2, 2] * Sw + R[2, 3]
+
+    return Vp, Vs, Rho
+
+
+def EnsembleSmootherMDA(PriorModels, SeisData, SeisPred, alpha, sigmaerr):
+    # ENSEMBLE SMOOTHER MDA computes the updated realizations of the
+    # model variables conditioned on the assimilated data using the
+    # Ensemble Smoother Multiple Data Assimilation
+    # INPUT PriorModels = prior models realizations (nm, ne)
+    #       SeisData = measured seismic data (nil, nd, 1)
+    #       SeisPred = predicted data (nd, ne)
+    #       alpha = inflation coefficient
+    #       sigmaerr = covariance matrix of the error (nd, nd)
+    # OUTPUT PostModels = updated models realizations (nm, ne)
+    #        KalmanGain = Kalman Gain Matrix
+
+    # initial parameters
+    nil, nd, ne = SeisPred.shape
+    # data perturbation
+    SeisPert = SeisData + np.sqrt(alpha * sigmaerr) @ np.random.randn(nil, nd, ne)
+    # mean models
+    mum = np.expand_dims(np.mean(PriorModels, axis=-1), axis=-1)
+    mud = np.expand_dims(np.mean(SeisPred, axis=-1), axis=-1)
+    # covariance matrices
+    smd = 1 / (ne - 1) * np.einsum('ijk,ilk->ijl', PriorModels - mum, SeisPred - mud, optimize=True)
+    sdd = 1 / (ne - 1) * np.einsum('ijk,ilk->ijl', SeisPred - mud, SeisPred - mud, optimize=True)
+    # Kalman Gain
+    sigmadobs = sdd + alpha * np.expand_dims(sigmaerr, axis=0)
+    sigmainv = np.linalg.pinv(sigmadobs)
+    KalmanGain = np.einsum('ijk,ikl->ijl', smd, sigmainv, optimize=True)
+    # Updated models
+    mdelta = np.einsum('ijk,ikl->ijl', KalmanGain, SeisPert - SeisPred, optimize=True)
+    PostModels = PriorModels + mdelta
+
+    return PostModels, KalmanGain
 
 
 def ProbFieldSimulation3D(vertcorr, horcorr, phiprior, clayprior, swprior, stdpetro, corrpetro, nxl, nil, nm, nsim):
@@ -385,10 +485,10 @@ def ProbFieldSimulation3D(vertcorr, horcorr, phiprior, clayprior, swprior, stdpe
     Claysim = np.zeros((nxl, nil, nm, nsim))
     Swsim = np.zeros((nxl, nil, nm, nsim))
     corrfun = CorrelationFunction3D(vertcorr, horcorr, nxl, nil, nm)
-    corrprior = (np.diag(np.sqrt(np.diag(corrpetro))) @ corrpetro) / np.diag(np.sqrt(np.diag(corrpetro)))
+    # corrprior = (np.diag(np.sqrt(np.diag(corrpetro))) @ corrpetro) / np.diag(np.sqrt(np.diag(corrpetro)))
 
     for k in range(nsim):
-        uncorrsim = multivariate_normal([0, 0, 0], corrprior, nxl * nil * nm)
+        uncorrsim = np.random.multivariate_normal([0, 0, 0], corrpetro, nxl * nil * nm)
         noisephi = np.reshape(uncorrsim[:, 0], (nxl, nil, nm))
         noiseclay = np.reshape(uncorrsim[:, 1], (nxl, nil, nm))
         noisesw = np.reshape(uncorrsim[:, 2], (nxl, nil, nm))
@@ -436,10 +536,10 @@ def RockPhysicsGMM(ftrain, mtrain, dtrain, mdomain, dcond, sigmaerr):
     sd = np.zeros((nd, nd, nf))
     smd = np.zeros((nv, nd, nf))
     sdm = np.zeros((nd, nv, nf))
-    
+
     for k in range(1, nf + 1):
         pf[k - 1] = np.sum(ftrain == k) / len(ftrain)
-        mjoint[k - 1, :] = np.mean(datatrain[ftrain == k], axis=0)
+        mjoint[k - 1, :] = np.mean(datatrain[ftrain[:, 0] == k, :], axis=0)
         mum[k - 1, :] = mjoint[k - 1, :nv]
         mud[k - 1, :] = mjoint[k - 1, nv:]
         sjoint[:, :, k - 1] = np.cov(datatrain.T)
@@ -448,20 +548,23 @@ def RockPhysicsGMM(ftrain, mtrain, dtrain, mdomain, dcond, sigmaerr):
         smd[:, :, k - 1] = sjoint[:nv, nv:, k - 1]
         sdm[:, :, k - 1] = sjoint[nv:, :nv, k - 1]
 
-    # posterior distribution 
+    # posterior distribution
     mupost = np.zeros((ns, nv, nf))
     sigmapost = np.zeros((nv, nv, nf))
     pfpost = np.zeros((ns, nf))
     Ppost = np.zeros((ns, mdomain.shape[0]))
-    
+
     # posterior covariance matrices
     for k in range(1, nf + 1):
-        sigmapost[:, :, k - 1] = sm[:, :, k - 1] - smd[:, :, k - 1] @ np.linalg.inv(sd[:, :, k - 1] + sigmaerr) @ sdm[:, :, k - 1]
+        sigmapost[:, :, k - 1] = sm[:, :, k - 1] - smd[:, :, k - 1] @ np.linalg.inv(sd[:, :, k - 1] + sigmaerr) @ sdm[:,
+                                                                                                                  :,
+                                                                                                                  k - 1]
 
     for i in range(ns):
         for k in range(1, nf + 1):
             # posterior means
-            mupost[i, :, k - 1] = mum[k - 1] + smd[:, :, k - 1] @ np.linalg.inv(sd[:, :, k - 1] + sigmaerr) @ (dcond[i] - mud[k - 1])
+            mupost[i, :, k - 1] = mum[k - 1] + smd[:, :, k - 1] @ np.linalg.inv(sd[:, :, k - 1] + sigmaerr) @ (
+                        dcond[i] - mud[k - 1])
             # posterior weights
             pfpost[i, k - 1] = pf[k - 1] * multivariate_normal.pdf(dcond[i], mean=mud[k - 1], cov=sd[:, :, k - 1])
 
@@ -470,8 +573,9 @@ def RockPhysicsGMM(ftrain, mtrain, dtrain, mdomain, dcond, sigmaerr):
 
         lh = np.zeros(mdomain.shape[0])
         for k in range(1, nf + 1):
-            lh += pfpost[i, k - 1] * multivariate_normal.pdf(mdomain, mean=mupost[i, :, k - 1], cov=sigmapost[:, :, k - 1])
-        
+            lh += pfpost[i, k - 1] * multivariate_normal.pdf(mdomain, mean=mupost[i, :, k - 1],
+                                                             cov=sigmapost[:, :, k - 1])
+
         # posterior PDF
         if np.sum(lh > 0):
             Ppost[i] = lh / np.sum(lh)
@@ -504,16 +608,19 @@ def RockPhysicsKDE(mtrain, dtrain, mdomain, ddomain, dcond, hm, hd):
     # multidimensional grids for model variables
     vecm = np.meshgrid(*mdomain.T, indexing='ij')
     mgrid = np.column_stack([m.flatten() for m in vecm])
+    mgridrep = np.tile(mgrid.T, [nt, 1, 1])
+    datamrep = np.tile(mtrain[..., np.newaxis], [1, 1, mgrid.shape[0]])
     # multidimensional grids for data variables
     vecd = np.meshgrid(*ddomain.T, indexing='ij')
     dgrid = np.column_stack([d.flatten() for d in vecd])
-
+    dgridrep = np.tile(dgrid.T, [nt, 1, 1])
+    datadrep = np.tile(dtrain[..., np.newaxis], [1, 1, dgrid.shape[0]])
     # kernel density estimation
-    hmmat = np.tile(hm, (nt, 1, mgrid.shape[0]))
-    prodm = np.prod(EpanechnikovKernel((mgrid.T[:, :, None] - mtrain.T[:, None, :]) / hmmat), axis=1)
+    hmmat = np.tile(hm[..., np.newaxis], [nt, 1, mgrid.shape[0]])
+    prodm = np.prod(EpanechnikovKernel((mgridrep - datamrep) / hmmat), axis=1)
     
-    hdmat = np.tile(hd, (nt, 1, dgrid.shape[0]))
-    prodd = np.prod(EpanechnikovKernel((dgrid.T[:, :, None] - dtrain.T[:, None, :]) / hdmat), axis=1)
+    hdmat = np.tile(hd[..., np.newaxis], [nt, 1, dgrid.shape[0]])
+    prodd = np.prod(EpanechnikovKernel((dgridrep - datadrep) / hdmat), axis=1)
 
     # joint distribution
     Pjoint = prodm.T @ prodd / (nt * np.prod(hm) * np.prod(hd))
@@ -548,7 +655,6 @@ def SeismicInversion3D(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior, sigmaprior, s
     #        mtrans = transformed mean (logGaussian to Gaussian) (nv*(nsamples+1),1)
     #        strans = transformed variance (logGaussian to Gaussian) (nv*(nsamples+1),1)
     #        Time = time vector of elastic properties (nsamples+1,1)
-
     # parameters
     ntheta = len(theta)
 
@@ -556,7 +662,7 @@ def SeismicInversion3D(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior, sigmaprior, s
     logVp = np.log(Vpprior)
     logVs = np.log(Vsprior)
     logRho = np.log(Rhoprior)
-    mprior = np.concatenate([logVp, logVs, logRho])
+    mprior = np.concatenate([logVp, logVs, logRho], axis=0)
     nm = logVp.shape[0]
 
     # Aki Richards matrix
@@ -569,25 +675,30 @@ def SeismicInversion3D(Seis, TimeSeis, Vpprior, Vsprior, Rhoprior, sigmaprior, s
     W = WaveletMatrix(wavelet, nm, ntheta)
 
     # forward operator
-    G = np.dot(np.dot(W, A), D)
+    G = np.einsum('mi,ijk,jn->mnk', W, A, D, optimize=True)
 
     # Bayesian Linearized AVO inversion analytical solution (Buland and Omre, 2003)
     # mean of d
-    mdobs = np.dot(G, mprior)
+    mdobs = np.einsum('ijk,jk->ik', G, mprior, optimize=True)
     # covariance matrix
-    sigmadobs = np.dot(np.dot(G, sigmaprior), G.T) + sigmaerr
-
+    sigmadobs = np.einsum('ijk,jm,mnk->ink', G, sigmaprior, G.transpose(1, 0, 2), optimize=True)
+    sigmadobs = sigmadobs + np.expand_dims(sigmaerr, axis=-1)
+    sigmainv = np.linalg.pinv(sigmadobs.transpose(2, 0, 1)).transpose(1, 2, 0)
     # posterior mean
-    mpost = mprior + np.dot(np.dot(np.dot(sigmaprior.T, G.T), pinvh(sigmadobs)), (Seis - mdobs))
+    ddelta = Seis - mdobs
+    mdelta = np.einsum('ij,jkm,knm,nm->im', sigmaprior, G.transpose(1, 0, 2), sigmainv, ddelta, optimize=True)
+    mpost = mprior + mdelta
     # posterior covariance matrix
-    sigmapost = sigmaprior - np.dot(np.dot(np.dot(np.dot(sigmaprior.T, G.T), pinvh(sigmadobs)), G), sigmaprior)
+    sigmadelta = np.einsum('ij,jkm,knm,npm,pq->iqm', sigmaprior, G.transpose(1, 0, 2), sigmainv, G, sigmaprior, optimize=True)
+    sigmapost = np.expand_dims(sigmaprior, axis=-1) - sigmadelta
 
     # statistical estimators posterior distribution
-    mmap = np.exp(mpost - np.diag(sigmapost))
+    sigmapost_diag = np.diagonal(sigmapost, axis1=0, axis2=1).T
+    mmap = np.exp(mpost - sigmapost_diag)
 
     # posterior distribution
-    mtrans = np.exp(mpost + 0.5 * np.diag(sigmapost))
-    strans = np.exp(2 * mpost + np.diag(sigmapost)) * (np.exp(np.diag(sigmapost)) - 1)
+    mtrans = np.exp(mpost + 0.5 * sigmapost_diag)
+    strans = np.exp(2 * mpost + sigmapost_diag) * (np.exp(sigmapost_diag) - 1)
 
     # time
     dt = TimeSeis[1] - TimeSeis[0]
@@ -610,6 +721,11 @@ def SeismicModel3D(Vp, Vs, Rho, Time, theta, W, D):
     #        Time = seismic time  (nsamples, 1)
     #        Cpp  = reflectivity coefficients matrix (nsamples x nangles, nsamples x nangles)
 
+    nxl, nil, nm = Vp.shape
+    ntrace = nxl * nil
+    Vp = Vp.reshape(ntrace, nm).T
+    Vs = Vs.reshape(ntrace, nm).T
+    Rho = Rho.reshape(ntrace, nm).T
     # number of variables
     nv = 3
 
@@ -617,38 +733,52 @@ def SeismicModel3D(Vp, Vs, Rho, Time, theta, W, D):
     logVp = np.log(Vp)
     logVs = np.log(Vs)
     logRho = np.log(Rho)
-    m = np.concatenate((logVp, logVs, logRho))
+    m = np.concatenate((logVp, logVs, logRho), axis=0)
 
     # Aki Richards matrix
     A = AkiRichardsCoefficientsMatrix(Vp, Vs, theta, nv)
 
     # Reflectivity coefficients matrix
-    mder = np.dot(D, m)
-    Cpp = np.dot(A, mder)
-
+    mder = D @ m
+    Cpp = np.einsum('ijk,jk->ik', A, mder, optimize=True)
     # Seismic data matrix
-    Seis = np.dot(W, Cpp)
+    Seis = W @ Cpp
 
     # Time seismic measurements
     TimeSeis = 0.5 * (Time[:-1] + Time[1:])
 
+    Seis = np.reshape(Seis.T, (nxl, nil, -1))
+    Cpp = np.reshape(Cpp.T, (nxl, nil, -1))
+
     return Seis, TimeSeis, Cpp
 
 
-def WaveletMatrix(wavelet, nsamples, ntheta):
+def convmtx(w, ns):
+    if len(w) < ns:
+        a = np.r_[w[0], np.zeros(ns - 1)]
+        b = np.r_[w, np.zeros(ns - 1)]
+    else:
+        b = np.r_[w[0], np.zeros(ns - 1)]
+        a = np.r_[w, np.zeros(ns - 1)]
+    C = toeplitz(a, b)
+
+    return C
+
+
+def WaveletMatrix(wavelet, ns, ntheta):
     # WaveletMatrix computes the wavelet matrix for discrete convolution
     # INPUT w = wavelet
-    #       nsamples = numbr of samples
+    #       ns = numbr of samples
     #       ntheta = number of angles
     # OUTUPT W = wavelet matrix
 
-    W = lil_matrix((ntheta * (nsamples - 1), ntheta * (nsamples - 1)))
-    _, indmaxwav = np.argmax(wavelet)
+    W = np.zeros((ntheta * (ns - 1), ntheta * (ns - 1)))
+    indmaxwav = np.argmax(wavelet)
 
-    for i in range(1, ntheta + 1):
-        wsub = np.convolve(wavelet, np.ones(nsamples - 1), 'full').reshape(-1, 1)
-        indsub = np.arange((i - 1) * (nsamples - 1), i * (nsamples - 1))
-        W[indsub, indsub] = wsub[indmaxwav : indmaxwav + nsamples - 1]
+    for i in range(ntheta):
+        wsub = convmtx(wavelet, (ns - 1))
+        wsub = wsub.T
+        W[i * (ns - 1):(i + 1) * (ns - 1), i * (ns - 1):(i + 1) * (ns - 1)] = wsub[indmaxwav:indmaxwav + (ns - 1), :]
 
     return W
 
