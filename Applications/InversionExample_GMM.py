@@ -11,29 +11,30 @@ Created on Mon Jul 24 19:59:11 2023
 # (Grana and Della Rossa, 2010) to predict the petrophysical properties 
 # from seismic data.
 
+import time
 import numpy as np
 import scipy.io as sio
 from Inversion import RickerWavelet
 import matplotlib.pyplot as plt
 from GeosPIn3D import SpatialCovariance, BayesPetroInversion3D_GMM
+from Utils import plot_slices
 
 # Load seismic data from the 'SeismicData3D.mat' file
 seismic_data = sio.loadmat('Data3D/SeismicData3D.mat')
 near = seismic_data['near']
 mid = seismic_data['mid']
 far = seismic_data['far']
-X = seismic_data['X']
-Y = seismic_data['Y']
+X = seismic_data['Y']
+Y = seismic_data['X']
 Z = seismic_data['Z']
 
 # Define the chosen inline and crossline indices
-interx = 39
-intery = 34
+interx = 34
+intery = 39
 
 # Additional initial parameters
-nm = near.shape[2] + 1
-nxl = near.shape[0]
-nil = near.shape[1]
+nxl, nil, nm = near.shape
+nm += 1
 nv = 3
 theta = [15, 30, 45]
 ntheta = len(theta)
@@ -48,45 +49,31 @@ ntw = 64
 wavelet, tw = RickerWavelet(ntw, freq, dt)
 
 # Plot seismic data
-fig = plt.figure(1)
-
+cmap = plt.cm.viridis
+fig = plt.figure(1, figsize=(18, 6))
 ax1 = fig.add_subplot(131, projection='3d')
-h1 = ax1.scatter(X, Y, Z, c=near[:, interx-1, intery-1, :].flatten(), cmap='viridis', edgecolor='none')
-ax1.set_zlim(TimeSeis[0], TimeSeis[-1])
-ax1.set_xlim(1, nil)
-ax1.set_ylim(1, nxl)
+plot_slices(np.unique(X), np.unique(Y), np.unique(Z), near, interx, intery, cmap=cmap, ax=ax1)
 ax1.set_xlabel('Inline')
 ax1.set_ylabel('Crossline')
 ax1.set_zlabel('Time (s)')
 ax1.set_title('Near')
 
 ax2 = fig.add_subplot(132, projection='3d')
-h2 = ax2.scatter(X, Y, Z, c=mid[:, interx-1, intery-1, :].flatten(), cmap='viridis', edgecolor='none')
-ax2.set_zlim(TimeSeis[0], TimeSeis[-1])
-ax2.set_xlim(1, nil)
-ax2.set_ylim(1, nxl)
+plot_slices(np.unique(X), np.unique(Y), np.unique(Z), near, interx, intery, cmap=cmap, ax=ax2)
 ax2.set_xlabel('Inline')
 ax2.set_ylabel('Crossline')
 ax2.set_zlabel('Time (s)')
 ax2.set_title('Mid')
 
 ax3 = fig.add_subplot(133, projection='3d')
-h3 = ax3.scatter(X, Y, Z, c=far[:, interx-1, intery-1, :].flatten(), cmap='viridis', edgecolor='none')
-ax3.set_zlim(TimeSeis[0], TimeSeis[-1])
-ax3.set_xlim(1, nil)
-ax3.set_ylim(1, nxl)
+plot_slices(np.unique(X), np.unique(Y), np.unique(Z), near, interx, intery, cmap=cmap, ax=ax3)
 ax3.set_xlabel('Inline')
 ax3.set_ylabel('Crossline')
 ax3.set_zlabel('Time (s)')
 ax3.set_title('Far')
 
-fig.colorbar(h1, ax=ax1, label='Amplitude')
-fig.colorbar(h2, ax=ax2, label='Amplitude')
-fig.colorbar(h3, ax=ax3, label='Amplitude')
-
 plt.tight_layout()
 plt.show()
-
 
 
 # Prior model (filtered well logs)
@@ -96,6 +83,7 @@ rhopriormean = 2.3
 Vpprior = vppriormean * np.ones((nxl, nil, nm))
 Vsprior = vspriormean * np.ones((nxl, nil, nm))
 Rhoprior = rhopriormean * np.ones((nxl, nil, nm))
+
 
 # Spatial correlation matrix
 corrlength = 5 * dt
@@ -113,7 +101,7 @@ VpTrain = training_data['VpTrain']
 VsTrain = training_data['VsTrain']
 RhoTrain = training_data['RhoTrain']
 petrotrain = np.hstack((PhiTrain, ClayTrain, SwTrain))
-np = petrotrain.shape[1]
+npetro = petrotrain.shape[1]
 elastrain = np.hstack((VpTrain, VsTrain, RhoTrain))
 nd = elastrain.shape[1]
 faciestrain = np.ones(PhiTrain.shape)
@@ -137,28 +125,34 @@ rpsigmaerr = 10**-2 * np.eye(nd)
 
 
 # Seismic inversion
-Vpmap, Vsmap, Rhomap, Phimap, Claymap, Swmap, Time = BayesPetroInversion3D_GMM(near, mid, far, TimeSeis, Vpprior, Vsprior, Rhoprior, sigmaprior, elastrain, petrotrain, faciestrain, vpgrid, vsgrid, rhogrid, phigrid, claygrid, swgrid, sigmaerr, wavelet, theta, nv, rpsigmaerr)
+start_t = time.time()
+Vpmap, Vsmap, Rhomap, Phimap, Claymap, Swmap, Time = BayesPetroInversion3D_GMM(near, mid, far, TimeSeis,
+                                                                               Vpprior, Vsprior, Rhoprior, sigmaprior,
+                                                                               elastrain, petrotrain, faciestrain,
+                                                                               vpgrid, vsgrid, rhogrid, phigrid, claygrid, swgrid,
+                                                                               sigmaerr, wavelet, theta, nv, rpsigmaerr)
+end_t = time.time()
+elapsed_t = end_t - start_t
+print('Computational time: ', elapsed_t) # seconds
+
 X, Y, Z = np.meshgrid(np.arange(1, nil+1), np.arange(1, nxl+1), Time)
 
 # Plot results
-fig = plt.figure(1)
-ax1 = fig.add_subplot(234)
-h1 = ax1.contourf(Y[:,:,interx], X[:,:,interx], Phimap[:,:,interx].T, 100, cmap='jet')
-plt.colorbar(h1, ax=ax1)
+fig = plt.figure(2, figsize=(18, 6))
+ax1 = fig.add_subplot(131, projection='3d')
+plot_slices(np.unique(Y), np.unique(X), np.unique(Z[:, :, 1:]), Phimap, interx, intery, cmap=cmap, ax=ax1)
 ax1.set_xlabel('Crossline')
 ax1.set_ylabel('Time (s)')
 ax1.set_title('Porosity')
 
-ax2 = fig.add_subplot(235)
-h2 = ax2.contourf(Y[:,:,interx], X[:,:,interx], Claymap[:,:,interx].T, 100, cmap='jet')
-plt.colorbar(h2, ax=ax2)
+ax2 = fig.add_subplot(132, projection='3d')
+plot_slices(np.unique(Y), np.unique(X), np.unique(Z[:, :, 1:]), Claymap, interx, intery, cmap=cmap, ax=ax2)
 ax2.set_xlabel('Crossline')
 ax2.set_ylabel('Time (s)')
 ax2.set_title('Clay volume')
 
-ax3 = fig.add_subplot(236)
-h3 = ax3.contourf(Y[:,:,interx], X[:,:,interx], Swmap[:,:,interx].T, 100, cmap='jet')
-plt.colorbar(h3, ax=ax3)
+ax3 = fig.add_subplot(133, projection='3d')
+plot_slices(np.unique(Y), np.unique(X), np.unique(Z[:, :, 1:]), Swmap, interx, intery, cmap=cmap, ax=ax3)
 ax3.set_xlabel('Crossline')
 ax3.set_ylabel('Time (s)')
 ax3.set_title('Water saturation')
